@@ -570,9 +570,14 @@ export default function App() {
   }
 
   const handlePrintSingleNow = () => {
-    if (!printQueue.length) return
-    print4x6Sheet(printQueue.map((item) => item.src))
-    setPrintQueue([])
+    if (printQueue.length > 0) {
+      print4x6Sheet(printQueue.map((item) => item.src))
+      setPrintQueue([])
+      return
+    }
+    if (resultImageUrl) {
+      print4x6Sheet([resultImageUrl])
+    }
   }
 
   const removeFromPrintQueue = (id) => {
@@ -989,13 +994,21 @@ export default function App() {
               })}
             </div>
 
-            {printQueue.length === 1 && (
+            {printQueue.length === 1 ? (
               <button
                 type="button"
                 onClick={handlePrintSingleNow}
                 className="w-full py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-[11px] text-zinc-300 transition cursor-pointer"
               >
-                Print 1 Photo Now
+                Print 1 Half Now
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handlePrintSingleNow}
+                className="w-full py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-[11px] text-zinc-300 transition cursor-pointer"
+              >
+                Print Single (Half 4×6)
               </button>
             )}
           </div>
