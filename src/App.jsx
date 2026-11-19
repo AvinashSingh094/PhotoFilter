@@ -1,0 +1,816 @@
+import { useState, useRef, useEffect, useCallback } from 'react'
+import OpenAI from 'openai'
+import { QRCodeSVG } from 'qrcode.react'
+import {
+  Camera,
+  RotateCcw,
+  Download,
+  Upload,
+  AlertCircle,
+  Loader2,
+  Eye,
+  ArrowLeft,
+  ArrowRight,
+  Home,
+  Check,
+  Printer,
+} from 'lucide-react'
+
+const MODEL_NAME = 'gpt-image-2.6-flare'
+const TARGET_WIDTH = 1024
+const TARGET_HEIGHT = 1536
+const TARGET_ASPECT = TARGET_WIDTH / TARGET_HEIGHT
+
+const FILTER_THEMES = [
+  {
+    id: 'crimson-cyan',
+    name: 'Crimson & Cyan',
+    subtitle: 'Neon red beams · Teal rim light',
+    primarySwatch: '#f43f5e',
+    secondarySwatch: '#06b6d4',
+    previewBg:
+      'radial-gradient(circle at 18% 18%, rgba(244, 63, 94, 0.55), transparent 55%), radial-gradient(circle at 85% 75%, rgba(6, 182, 212, 0.5), transparent 55%), #09090b',
+    buttonGradient: 'from-rose-600 to-cyan-600 hover:from-rose-500 hover:to-cyan-500',
+    glowShadow: 'shadow-[0_0_50px_-15px_rgba(244,63,94,0.28)]',
+    lightingPrompt:
+      'Cut dramatic, clearly visible diagonal neon red volumetric light beams and laser-like spotlight rays through atmospheric studio haze from the top-left behind the subject, paired with intense cyan/teal rim lighting and subtle cyan volumetric light shafts from the right',
+  },
+  {
+    id: 'violet-blue',
+    name: 'Ultraviolet & Blue',
+    subtitle: 'Magenta-purple rays · Electric blue rim',
+    primarySwatch: '#d946ef',
+    secondarySwatch: '#3b82f6',
+    previewBg:
+      'radial-gradient(circle at 18% 18%, rgba(217, 70, 239, 0.55), transparent 55%), radial-gradient(circle at 85% 75%, rgba(59, 130, 246, 0.5), transparent 55%), #09090b',
+    buttonGradient: 'from-fuchsia-600 to-blue-600 hover:from-fuchsia-500 hover:to-blue-500',
+    glowShadow: 'shadow-[0_0_50px_-15px_rgba(217,70,239,0.28)]',
+    lightingPrompt:
+      'Cut dramatic, clearly visible diagonal neon magenta-violet volumetric light beams and laser-like spotlight rays through atmospheric studio haze from the top-left behind the subject, paired with intense electric cobalt-blue rim lighting and subtle blue volumetric light shafts from the right',
+  },
+  {
+    id: 'amber-teal',
+    name: 'Cyber Gold & Teal',
+    subtitle: 'Warm amber beams · Deep cyan rim',
+    primarySwatch: '#f59e0b',
+    secondarySwatch: '#14b8a6',
+    previewBg:
+      'radial-gradient(circle at 18% 18%, rgba(245, 158, 11, 0.55), transparent 55%), radial-gradient(circle at 85% 75%, rgba(20, 184, 166, 0.5), transparent 55%), #09090b',
+    buttonGradient: 'from-amber-500 to-teal-600 hover:from-amber-400 hover:to-teal-500',
+    glowShadow: 'shadow-[0_0_50px_-15px_rgba(245,158,11,0.25)]',
+    lightingPrompt:
+      'Cut dramatic, clearly visible diagonal golden-amber orange volumetric light beams and laser-like spotlight rays through atmospheric studio haze from the top-left behind the subject, paired with intense deep teal-cyan rim lighting and subtle teal volumetric light shafts from the right',
+  },
+  {
+    id: 'emerald-magenta',
+    name: 'Acid Green & Pink',
+    subtitle: 'Neon emerald rays · Hot pink rim',
+    primarySwatch: '#10b981',
+    secondarySwatch: '#ec4899',
+    previewBg:
+      'radial-gradient(circle at 18% 18%, rgba(16, 185, 129, 0.55), transparent 55%), radial-gradient(circle at 85% 75%, rgba(236, 72, 153, 0.5), transparent 55%), #09090b',
+    buttonGradient: 'from-emerald-600 to-pink-600 hover:from-emerald-500 hover:to-pink-500',
+    glowShadow: 'shadow-[0_0_50px_-15px_rgba(16,185,129,0.25)]',
+    lightingPrompt:
+      'Cut dramatic, clearly visible diagonal neon emerald-green volumetric light beams and laser-like spotlight rays through atmospheric studio haze from the top-left behind the subject, paired with intense hot neon pink/magenta rim lighting and subtle pink volumetric light shafts from the right',
+  },
+]
+
+function buildPrompt(theme) {
+  return `Edit this exact photo by applying a dramatic cyberpunk studio lighting effect over a clean, empty, dark studio background. Keep the person 100% identical to the input image: strictly preserve their exact facial structure, facial features, eyes, nose, mouth, skin texture, hair, beard, glasses/accessories (do not add or remove glasses), clothing, expression, pose, and camera framing. ${theme.lightingPrompt}, deep blacks, high contrast, glossy specular reflections, and futuristic music video color grading—no cityscapes, no buildings, no neon text/signs, and no street props.`
+}
+
+function prepareImageForApi(blob) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(blob)
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      const imgAspect = img.width / img.height
+      let srcWidth = img.width
+      let srcHeight = img.height
+      let startX = 0
+      let startY = 0
+
+      if (imgAspect > TARGET_ASPECT) {
+        srcWidth = Math.round(img.height * TARGET_ASPECT)
+        startX = Math.round((img.width - srcWidth) / 2)
+      } else {
+        srcHeight = Math.round(img.width / TARGET_ASPECT)
+        startY = Math.round((img.height - srcHeight) / 2)
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = TARGET_WIDTH
+      canvas.height = TARGET_HEIGHT
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, startX, startY, srcWidth, srcHeight, 0, 0, TARGET_WIDTH, TARGET_HEIGHT)
+
+      canvas.toBlob(
+        (compressedBlob) => {
+          if (!compressedBlob) {
+            reject(new Error('Failed to process image'))
+            return
+          }
+          resolve(new File([compressedBlob], 'capture.jpg', { type: 'image/jpeg' }))
+        },
+        'image/jpeg',
+        0.92
+      )
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Failed to load input image'))
+    }
+
+    img.src = objectUrl
+  })
+}
+
+async function uploadToCloudinary(dataUrl, cloudName, uploadPreset) {
+  const formData = new FormData()
+  formData.append('file', dataUrl)
+  formData.append('upload_preset', uploadPreset)
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`,
+    {
+      method: 'POST',
+      body: formData,
+    }
+  )
+
+  const data = await response.json()
+  if (!response.ok || !data.secure_url) {
+    throw new Error(data?.error?.message || 'Cloudinary upload failed')
+  }
+
+  return data.secure_url
+}
+
+export default function App() {
+  const apiKey = import.meta.env.DEV
+    ? import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem('openai_api_key') || ''
+    : ''
+  const cloudinaryCloudName = (import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '').trim()
+  const cloudinaryUploadPreset = (import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '').trim()
+
+  // Pages: 'home' | 'capture' | 'result'
+  const [page, setPage] = useState('home')
+  const [selectedThemeId, setSelectedThemeId] = useState(FILTER_THEMES[0].id)
+
+  const [stream, setStream] = useState(null)
+  const [cameraError, setCameraError] = useState('')
+  const [sourceBlob, setSourceBlob] = useState(null)
+  const [sourcePreviewUrl, setSourcePreviewUrl] = useState('')
+  const [resultImageUrl, setResultImageUrl] = useState('')
+  const [showingOriginal, setShowingOriginal] = useState(false)
+
+  const [cloudinaryUrl, setCloudinaryUrl] = useState('')
+  const [isUploadingCloud, setIsUploadingCloud] = useState(false)
+  const [cloudError, setCloudError] = useState('')
+
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState('')
+
+  const videoRef = useRef(null)
+  const fileInputRef = useRef(null)
+
+  const selectedTheme =
+    FILTER_THEMES.find((t) => t.id === selectedThemeId) || FILTER_THEMES[0]
+
+  const stopCamera = useCallback(() => {
+    setStream((currentStream) => {
+      if (currentStream) {
+        currentStream.getTracks().forEach((track) => track.stop())
+      }
+      return null
+    })
+  }, [])
+
+  // Manage camera lifecycle only when on the capture page with no photo taken yet
+  useEffect(() => {
+    if (page !== 'capture' || sourcePreviewUrl) {
+      return
+    }
+
+    let active = true
+    let activeStream = null
+
+    navigator.mediaDevices
+      .getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      })
+      .then((mediaStream) => {
+        if (!active) {
+          mediaStream.getTracks().forEach((track) => track.stop())
+          return
+        }
+        activeStream = mediaStream
+        setCameraError('')
+        setStream(mediaStream)
+      })
+      .catch((err) => {
+        if (active) {
+          setCameraError('Camera unavailable or permission denied. You can still upload a photo.')
+        }
+        console.error('Camera access error:', err)
+      })
+
+    return () => {
+      active = false
+      if (activeStream) {
+        activeStream.getTracks().forEach((track) => track.stop())
+      }
+      setStream(null)
+    }
+  }, [page, sourcePreviewUrl])
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream, page, sourcePreviewUrl])
+
+  const resetImages = () => {
+    if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl)
+    setSourceBlob(null)
+    setSourcePreviewUrl('')
+    setResultImageUrl('')
+    setCloudinaryUrl('')
+    setCloudError('')
+    setError('')
+    setShowingOriginal(false)
+  }
+
+  const goToCapture = () => {
+    setError('')
+    setPage('capture')
+  }
+
+  const goHome = () => {
+    stopCamera()
+    resetImages()
+    setPage('home')
+  }
+
+  const handleRetake = () => {
+    resetImages()
+    setPage('capture')
+  }
+
+  const capturePhoto = () => {
+    const video = videoRef.current
+    if (!video || !video.videoWidth) return
+
+    const videoAspect = video.videoWidth / video.videoHeight
+    let srcWidth = video.videoWidth
+    let srcHeight = video.videoHeight
+    let startX = 0
+    let startY = 0
+
+    if (videoAspect > TARGET_ASPECT) {
+      srcWidth = Math.round(video.videoHeight * TARGET_ASPECT)
+      startX = Math.round((video.videoWidth - srcWidth) / 2)
+    } else {
+      srcHeight = Math.round(video.videoWidth / TARGET_ASPECT)
+      startY = Math.round((video.videoHeight - srcHeight) / 2)
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = TARGET_WIDTH
+    canvas.height = TARGET_HEIGHT
+    const ctx = canvas.getContext('2d')
+
+    ctx.translate(canvas.width, 0)
+    ctx.scale(-1, 1)
+    ctx.drawImage(video, startX, startY, srcWidth, srcHeight, 0, 0, canvas.width, canvas.height)
+
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl)
+      setSourceBlob(blob)
+      setSourcePreviewUrl(URL.createObjectURL(blob))
+      setResultImageUrl('')
+      setError('')
+      stopCamera()
+    }, 'image/png')
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+
+    try {
+      const processedFile = await prepareImageForApi(file)
+      if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl)
+      setSourceBlob(processedFile)
+      setSourcePreviewUrl(URL.createObjectURL(processedFile))
+      setResultImageUrl('')
+      setError('')
+      stopCamera()
+    } catch (err) {
+      console.error('File processing error:', err)
+      setError('Could not load the selected image.')
+    }
+  }
+
+  const applyFilter = async () => {
+    if (!sourceBlob) return
+
+    setIsGenerating(true)
+    setError('')
+    setCloudinaryUrl('')
+    setCloudError('')
+
+    try {
+      const imageFile = await prepareImageForApi(sourceBlob)
+      const prompt = buildPrompt(selectedTheme)
+      let b64 = ''
+
+      if (import.meta.env.DEV) {
+        const trimmedKey = apiKey.trim()
+        if (!trimmedKey || trimmedKey === 'your_openai_api_key_here') {
+          setError('API key missing. Set VITE_OPENAI_API_KEY in your .env file.')
+          setIsGenerating(false)
+          return
+        }
+
+        const client = new OpenAI({
+          apiKey: trimmedKey,
+          baseURL: `${window.location.origin}/openai-api/v1`,
+          dangerouslyAllowBrowser: true,
+          maxRetries: 2,
+        })
+
+        const response = await client.images.edit({
+          model: MODEL_NAME,
+          image: imageFile,
+          prompt,
+          quality: 'high',
+          size: '1024x1536',
+          output_format: 'png',
+        })
+
+        b64 = response.data?.[0]?.b64_json || ''
+      } else {
+        const formData = new FormData()
+        formData.append('image', imageFile)
+        formData.append('prompt', prompt)
+
+        const res = await fetch('/api/filter', {
+          method: 'POST',
+          body: formData,
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          throw new Error(data?.error || 'Failed to apply filter.')
+        }
+        b64 = data?.b64_json || ''
+      }
+
+      if (!b64) {
+        throw new Error('No image returned.')
+      }
+
+      const generatedDataUrl = `data:image/png;base64,${b64}`
+      setResultImageUrl(generatedDataUrl)
+      setPage('result')
+
+      // Automatically upload generated image to Cloudinary if configured
+      const hasCloudinaryConfig =
+        cloudinaryCloudName &&
+        cloudinaryUploadPreset &&
+        cloudinaryCloudName !== 'your_cloud_name_here' &&
+        cloudinaryUploadPreset !== 'your_unsigned_upload_preset_here'
+
+      if (hasCloudinaryConfig) {
+        setIsUploadingCloud(true)
+        uploadToCloudinary(generatedDataUrl, cloudinaryCloudName, cloudinaryUploadPreset)
+          .then((secureUrl) => {
+            setCloudinaryUrl(secureUrl)
+          })
+          .catch((uploadErr) => {
+            console.error('Cloudinary upload error:', uploadErr)
+            setCloudError(uploadErr?.message || 'Failed to upload image for QR code.')
+          })
+          .finally(() => {
+            setIsUploadingCloud(false)
+          })
+      } else {
+        setCloudError(
+          'Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in .env to enable QR code.'
+        )
+      }
+    } catch (err) {
+      console.error('Image Filter error:', err)
+      setError('Failed to apply filter. Please try again.')
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const downloadImage = () => {
+    if (!resultImageUrl) return
+    const link = document.createElement('a')
+    link.href = resultImageUrl
+    link.download = `portrait-${selectedTheme.id}-${Date.now()}.png`
+    link.click()
+  }
+
+  const handlePrint = () => {
+    if (!resultImageUrl) return
+
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    document.body.appendChild(iframe)
+
+    const doc = iframe.contentWindow?.document
+    if (!doc) {
+      document.body.removeChild(iframe)
+      return
+    }
+
+    doc.open()
+    doc.write(`<!doctype html>
+<html>
+  <head>
+    <title>Print Portrait</title>
+    <style>
+      @page {
+        margin: 0;
+        size: portrait;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      img {
+        max-width: 100vw;
+        max-height: 100vh;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="print-img" src="${resultImageUrl}" alt="Portrait" />
+    <script>
+      const img = document.getElementById('print-img');
+      const triggerPrint = () => {
+        setTimeout(() => {
+          window.focus();
+          window.print();
+        }, 150);
+      };
+      if (img.complete) {
+        triggerPrint();
+      } else {
+        img.onload = triggerPrint;
+      }
+    </script>
+  </body>
+</html>`)
+    doc.close()
+
+    setTimeout(() => {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe)
+      }
+    }, 60000)
+  }
+
+  // 1. HOME PAGE: Select Filter Color
+  if (page === 'home') {
+    return (
+      <div className="min-h-svh flex items-center justify-center px-4 py-8 bg-zinc-950 text-zinc-100">
+        <main className="w-full max-w-md flex flex-col gap-6">
+          <div className="text-center space-y-1.5">
+            <h1 className="text-xl font-medium tracking-tight text-zinc-100">
+              Choose Filter Style
+            </h1>
+            <p className="text-xs text-zinc-400">
+              Select a neon lighting palette before capturing your portrait
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {FILTER_THEMES.map((theme) => {
+              const isSelected = theme.id === selectedThemeId
+              return (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => setSelectedThemeId(theme.id)}
+                  className={`group relative rounded-2xl p-3.5 text-left transition border cursor-pointer flex flex-col justify-between aspect-4/4.5 overflow-hidden ${
+                    isSelected
+                      ? 'border-zinc-200 ring-1 ring-zinc-200/50'
+                      : 'border-zinc-800/90 hover:border-zinc-700'
+                  }`}
+                  style={{ background: theme.previewBg }}
+                >
+                  <div
+                    className="pointer-events-none absolute -top-10 -left-10 w-40 h-40 rotate-35 opacity-35 blur-xl transition-opacity group-hover:opacity-55"
+                    style={{
+                      background: `linear-gradient(90deg, transparent, ${theme.primarySwatch}, transparent)`,
+                    }}
+                  />
+
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex items-center -space-x-1.5">
+                      <span
+                        className="w-4 h-4 rounded-full border border-zinc-950/60"
+                        style={{ backgroundColor: theme.primarySwatch }}
+                      />
+                      <span
+                        className="w-4 h-4 rounded-full border border-zinc-950/60"
+                        style={{ backgroundColor: theme.secondarySwatch }}
+                      />
+                    </div>
+
+                    {isSelected && (
+                      <span className="w-5 h-5 rounded-full bg-zinc-100 text-zinc-950 flex items-center justify-center">
+                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="relative mt-auto pt-8">
+                    <div className="text-sm font-medium text-zinc-100 leading-snug">
+                      {theme.name}
+                    </div>
+                    <div className="text-[11px] text-zinc-400 mt-0.5 leading-tight">
+                      {theme.subtitle}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={goToCapture}
+            className={`w-full h-11 rounded-xl bg-gradient-to-r ${selectedTheme.buttonGradient} text-white text-sm font-medium inline-flex items-center justify-center gap-2 transition cursor-pointer`}
+          >
+            <span>Continue to Camera</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </main>
+      </div>
+    )
+  }
+
+  // 2. CAPTURE PAGE
+  if (page === 'capture') {
+    return (
+      <div className="min-h-svh flex items-center justify-center px-4 py-6 bg-zinc-950 text-zinc-100">
+        <main className="w-full max-w-sm flex flex-col items-center gap-3.5">
+          {/* Top Bar */}
+          <div className="w-full flex items-center justify-between">
+            <button
+              type="button"
+              onClick={goHome}
+              disabled={isGenerating}
+              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-40 transition cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Change Color</span>
+            </button>
+
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300">
+              <span className="flex items-center -space-x-1">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: selectedTheme.primarySwatch }}
+                />
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: selectedTheme.secondarySwatch }}
+                />
+              </span>
+              <span>{selectedTheme.name}</span>
+            </div>
+          </div>
+
+          {/* 2:3 Portrait Viewport */}
+          <div
+            className={`relative w-full aspect-2/3 max-h-[74svh] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/90 ${selectedTheme.glowShadow} flex items-center justify-center`}
+          >
+            {!sourcePreviewUrl && !cameraError && (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover -scale-x-100"
+              />
+            )}
+
+            {!sourcePreviewUrl && cameraError && (
+              <div className="px-6 text-center flex flex-col items-center gap-3">
+                <Camera className="w-8 h-8 text-zinc-600" />
+                <p className="text-xs text-zinc-400 leading-relaxed">{cameraError}</p>
+              </div>
+            )}
+
+            {sourcePreviewUrl && (
+              <img
+                src={sourcePreviewUrl}
+                alt="Captured preview"
+                className="w-full h-full object-cover"
+              />
+            )}
+
+            {isGenerating && (
+              <div className="absolute inset-0 bg-zinc-950/75 backdrop-blur-xs flex flex-col items-center justify-center gap-3">
+                <div className="relative flex items-center justify-center">
+                  <div
+                    className="absolute w-12 h-12 rounded-full blur-md animate-pulse opacity-35"
+                    style={{ backgroundColor: selectedTheme.primarySwatch }}
+                  />
+                  <Loader2 className="w-7 h-7 text-zinc-100 animate-spin relative" />
+                </div>
+                <p className="text-xs tracking-wider uppercase text-zinc-200 font-medium">
+                  Applying filter...
+                </p>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className="w-full flex items-start gap-2 text-xs text-rose-300 bg-rose-950/40 border border-rose-500/30 rounded-xl px-3.5 py-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          {!sourcePreviewUrl ? (
+            <div className="w-full flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={capturePhoto}
+                disabled={!stream}
+                className="flex-1 h-11 rounded-xl bg-zinc-100 text-zinc-950 text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-white disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Capture</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-11 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm inline-flex items-center justify-center gap-2 hover:bg-zinc-800/80 hover:text-zinc-100 transition cursor-pointer"
+                title="Upload an image instead"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload</span>
+              </button>
+            </div>
+          ) : (
+            <div className="w-full flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleRetake}
+                disabled={isGenerating}
+                className="h-11 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm inline-flex items-center justify-center gap-2 hover:bg-zinc-800/80 disabled:opacity-40 transition cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Retake</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={applyFilter}
+                disabled={isGenerating}
+                className={`flex-1 h-11 rounded-xl bg-gradient-to-r ${selectedTheme.buttonGradient} text-white text-sm font-medium inline-flex items-center justify-center disabled:opacity-50 transition cursor-pointer`}
+              >
+                <span>Apply Filter</span>
+              </button>
+            </div>
+          )}
+        </main>
+      </div>
+    )
+  }
+
+  // 3. RESULT PAGE
+  return (
+    <div className="min-h-svh flex items-center justify-center px-4 py-6 bg-zinc-950 text-zinc-100">
+      <main className="w-full max-w-2xl flex flex-col md:flex-row items-center justify-center gap-6">
+        {/* Left: Portrait + Action Buttons */}
+        <div className="w-full max-w-sm flex flex-col items-center gap-3.5">
+          <div
+            className={`relative w-full aspect-2/3 max-h-[75svh] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/90 ${selectedTheme.glowShadow} flex items-center justify-center`}
+          >
+            <img
+              src={showingOriginal ? sourcePreviewUrl : resultImageUrl}
+              alt="Filtered portrait"
+              className="w-full h-full object-cover"
+            />
+
+            <button
+              type="button"
+              onMouseDown={() => setShowingOriginal(true)}
+              onMouseUp={() => setShowingOriginal(false)}
+              onMouseLeave={() => setShowingOriginal(false)}
+              onTouchStart={() => setShowingOriginal(true)}
+              onTouchEnd={() => setShowingOriginal(false)}
+              className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] bg-zinc-950/80 text-zinc-300 border border-zinc-800 backdrop-blur-md hover:text-white select-none cursor-pointer"
+            >
+              <Eye className="w-3 h-3" />
+              <span>{showingOriginal ? 'Original' : 'Hold to compare'}</span>
+            </button>
+          </div>
+
+          <div className="w-full flex items-center gap-2">
+            <button
+              type="button"
+              onClick={goHome}
+              title="Home"
+              className="h-11 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm inline-flex items-center justify-center gap-2 hover:bg-zinc-800/80 hover:text-zinc-100 transition cursor-pointer"
+            >
+              <Home className="w-4 h-4" />
+              <span>Home</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex-1 h-11 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-zinc-800/80 hover:text-white transition cursor-pointer"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Print</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={downloadImage}
+              title="Download"
+              className="h-11 px-4 rounded-xl bg-zinc-100 text-zinc-950 text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-white transition cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Standalone QR Code Card */}
+        <aside className="w-full max-w-sm md:w-56 shrink-0 rounded-2xl bg-zinc-900/70 border border-zinc-800/90 p-5 flex flex-col items-center justify-center gap-3 text-center">
+          <p className="text-xs font-medium tracking-wide uppercase text-zinc-300">
+            Scan to Download
+          </p>
+
+          {cloudinaryUrl ? (
+            <div className="p-3 rounded-xl bg-white shadow-sm">
+              <QRCodeSVG value={cloudinaryUrl} size={156} level="M" />
+            </div>
+          ) : isUploadingCloud ? (
+            <div className="w-[180px] h-[180px] rounded-xl bg-zinc-950/60 border border-zinc-800/80 flex flex-col items-center justify-center gap-2.5 text-zinc-400">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-[11px]">Generating QR...</span>
+            </div>
+          ) : (
+            <div className="w-[180px] min-h-[140px] rounded-xl bg-zinc-950/60 border border-zinc-800/80 px-3 py-4 flex items-center justify-center">
+              <p className="text-[11px] text-rose-300/90 leading-relaxed">
+                {cloudError || 'QR code unavailable'}
+              </p>
+            </div>
+          )}
+
+          <p className="text-[11px] text-zinc-500 leading-snug">
+            Point your phone camera at the QR code to save your photo
+          </p>
+        </aside>
+      </main>
+    </div>
+  )
+}
