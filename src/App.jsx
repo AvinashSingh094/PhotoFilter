@@ -14,6 +14,7 @@ import {
   Home,
   Check,
   Printer,
+  X,
 } from 'lucide-react'
 
 const MODEL_NAME = 'gpt-image-2.6-flare'
@@ -171,6 +172,10 @@ export default function App() {
   const [cloudinaryUrl, setCloudinaryUrl] = useState('')
   const [isUploadingCloud, setIsUploadingCloud] = useState(false)
   const [cloudError, setCloudError] = useState('')
+
+  // 2-up 4x6 print queue (holds up to 2 portraits: left 2x3 + right 2x3 on a 4x6 sheet)
+  const [printQueue, setPrintQueue] = useState([])
+  const [currentResultId, setCurrentResultId] = useState('')
 
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -383,6 +388,7 @@ export default function App() {
 
       const generatedDataUrl = `data:image/png;base64,${b64}`
       setResultImageUrl(generatedDataUrl)
+      setCurrentResultId(`${Date.now()}-${Math.random().toString(36).slice(2, 7)}`)
       setPage('result')
 
       // Automatically upload generated image to Cloudinary if configured
@@ -426,9 +432,10 @@ export default function App() {
     link.click()
   }
 
-  const handlePrint = () => {
-    if (!resultImageUrl) return
+  const print4x6Sheet = (imagesToPrint) => {
+    if (!imagesToPrint.length) return
 
+    const [img1, img2] = imagesToPrint
     const iframe = document.createElement('iframe')
     iframe.style.position = 'fixed'
     iframe.style.right = '0'
@@ -448,47 +455,81 @@ export default function App() {
     doc.write(`<!doctype html>
 <html>
   <head>
-    <title>Print Portrait</title>
+    <title>Print 4x6 Sheet (2x3 Pair)</title>
     <style>
       @page {
+        size: 6in 4in;
         margin: 0;
-        size: portrait;
+      }
+      * {
+        box-sizing: border-box;
       }
       html, body {
         margin: 0;
         padding: 0;
-        width: 100%;
-        height: 100%;
-        background: #000;
+        width: 6in;
+        height: 4in;
+        background: #ffffff;
+        overflow: hidden;
+      }
+      .sheet {
+        width: 6in;
+        height: 4in;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+      }
+      .half {
+        width: 3in;
+        height: 4in;
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
+        background: #ffffff;
       }
-      img {
-        max-width: 100vw;
-        max-height: 100vh;
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
+      .half img {
+        width: 2in;
+        height: 3in;
+        object-fit: cover;
         display: block;
+      }
+      .divider {
+        width: 0;
+        height: 4in;
+        border-left: 1px dashed #d4d4d8;
       }
     </style>
   </head>
   <body>
-    <img id="print-img" src="${resultImageUrl}" alt="Portrait" />
+    <div class="sheet">
+      <div class="half">
+        <img class="print-img" src="${img1}" alt="Portrait 1" />
+      </div>
+      <div class="divider"></div>
+      <div class="half">
+        ${img2 ? `<img class="print-img" src="${img2}" alt="Portrait 2" />` : ''}
+      </div>
+    </div>
     <script>
-      const img = document.getElementById('print-img');
-      const triggerPrint = () => {
+      const imgs = Array.from(document.querySelectorAll('.print-img'));
+      Promise.all(
+        imgs.map((img) =>
+          img.complete
+            ? Promise.resolve()
+            : new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve;
+              })
+        )
+      ).then(() => {
         setTimeout(() => {
           window.focus();
           window.print();
         }, 150);
-      };
-      if (img.complete) {
-        triggerPrint();
-      } else {
-        img.onload = triggerPrint;
-      }
+      });
     </script>
   </body>
 </html>`)
@@ -501,11 +542,48 @@ export default function App() {
     }, 60000)
   }
 
+  const isCurrentInQueue = Boolean(
+    currentResultId && printQueue.some((item) => item.id === currentResultId)
+  )
+
+  const handlePrintAction = () => {
+    if (!resultImageUrl || !currentResultId) return
+
+    // If current photo is already queued as slot 1, print now if desired or wait
+    if (isCurrentInQueue) {
+      if (printQueue.length === 2) {
+        print4x6Sheet([printQueue[0].src, printQueue[1].src])
+        setPrintQueue([])
+      }
+      return
+    }
+
+    if (printQueue.length === 0) {
+      // Queue as Photo 1 of 2 and keep it ready for the next user
+      setPrintQueue([{ id: currentResultId, src: resultImageUrl }])
+    } else {
+      // Combine waiting Photo 1 + current Photo 2, print both on one 4x6 sheet, then reset queue
+      const pair = [printQueue[0].src, resultImageUrl]
+      print4x6Sheet(pair)
+      setPrintQueue([])
+    }
+  }
+
+  const handlePrintSingleNow = () => {
+    if (!printQueue.length) return
+    print4x6Sheet(printQueue.map((item) => item.src))
+    setPrintQueue([])
+  }
+
+  const removeFromPrintQueue = (id) => {
+    setPrintQueue((prev) => prev.filter((item) => item.id !== id))
+  }
+
   // 1. HOME PAGE: Select Filter Color
   if (page === 'home') {
     return (
       <div className="min-h-svh flex items-center justify-center px-4 py-8 bg-zinc-950 text-zinc-100">
-        <main className="w-full max-w-md flex flex-col gap-6">
+        <main className="w-full max-w-md flex flex-col gap-5">
           <div className="text-center space-y-1.5">
             <h1 className="text-xl font-medium tracking-tight text-zinc-100">
               Choose Filter Style
@@ -514,6 +592,43 @@ export default function App() {
               Select a neon lighting palette before capturing your portrait
             </p>
           </div>
+
+          {printQueue.length > 0 && (
+            <div className="rounded-xl bg-zinc-900/80 border border-zinc-800 px-3 py-2.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <img
+                  src={printQueue[0].src}
+                  alt="Queued print 1"
+                  className="w-7 h-10 rounded-md object-cover border border-zinc-700 shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-zinc-200 truncate">
+                    4×6 Print Queue ({printQueue.length}/2)
+                  </p>
+                  <p className="text-[11px] text-zinc-400 truncate">
+                    Next photo will print together as 2×3 pair
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handlePrintSingleNow}
+                  className="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition cursor-pointer"
+                >
+                  Print Now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeFromPrintQueue(printQueue[0].id)}
+                  title="Clear queue"
+                  className="p-1 text-zinc-500 hover:text-zinc-200 transition cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             {FILTER_THEMES.map((theme) => {
@@ -765,11 +880,32 @@ export default function App() {
 
             <button
               type="button"
-              onClick={handlePrint}
-              className="flex-1 h-11 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-zinc-800/80 hover:text-white transition cursor-pointer"
+              onClick={handlePrintAction}
+              disabled={isCurrentInQueue}
+              className={`flex-1 h-11 rounded-xl border text-sm font-medium inline-flex items-center justify-center gap-2 transition cursor-pointer ${
+                isCurrentInQueue
+                  ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300 cursor-default'
+                  : printQueue.length === 1
+                    ? 'bg-cyan-600/20 border-cyan-500/50 text-cyan-200 hover:bg-cyan-600/30'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-200 hover:bg-zinc-800/80 hover:text-white'
+              }`}
             >
-              <Printer className="w-4 h-4" />
-              <span>Print</span>
+              {isCurrentInQueue ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Queued (1/2)</span>
+                </>
+              ) : printQueue.length === 1 ? (
+                <>
+                  <Printer className="w-4 h-4" />
+                  <span>Print Pair (2/2)</span>
+                </>
+              ) : (
+                <>
+                  <Printer className="w-4 h-4" />
+                  <span>Add to Print (1/2)</span>
+                </>
+              )}
             </button>
 
             <button
@@ -783,32 +919,86 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right: Standalone QR Code Card */}
-        <aside className="w-full max-w-sm md:w-56 shrink-0 rounded-2xl bg-zinc-900/70 border border-zinc-800/90 p-5 flex flex-col items-center justify-center gap-3 text-center">
-          <p className="text-xs font-medium tracking-wide uppercase text-zinc-300">
-            Scan to Download
-          </p>
+        {/* Right: Standalone QR Code Card + 4x6 Print Queue Card */}
+        <aside className="w-full max-w-sm md:w-56 shrink-0 flex flex-col gap-3">
+          <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800/90 p-5 flex flex-col items-center justify-center gap-3 text-center">
+            <p className="text-xs font-medium tracking-wide uppercase text-zinc-300">
+              Scan to Download
+            </p>
 
-          {cloudinaryUrl ? (
-            <div className="p-3 rounded-xl bg-white shadow-sm">
-              <QRCodeSVG value={cloudinaryUrl} size={156} level="M" />
-            </div>
-          ) : isUploadingCloud ? (
-            <div className="w-[180px] h-[180px] rounded-xl bg-zinc-950/60 border border-zinc-800/80 flex flex-col items-center justify-center gap-2.5 text-zinc-400">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-[11px]">Generating QR...</span>
-            </div>
-          ) : (
-            <div className="w-[180px] min-h-[140px] rounded-xl bg-zinc-950/60 border border-zinc-800/80 px-3 py-4 flex items-center justify-center">
-              <p className="text-[11px] text-rose-300/90 leading-relaxed">
-                {cloudError || 'QR code unavailable'}
-              </p>
-            </div>
-          )}
+            {cloudinaryUrl ? (
+              <div className="p-3 rounded-xl bg-white shadow-sm">
+                <QRCodeSVG value={cloudinaryUrl} size={156} level="M" />
+              </div>
+            ) : isUploadingCloud ? (
+              <div className="w-[180px] h-[180px] rounded-xl bg-zinc-950/60 border border-zinc-800/80 flex flex-col items-center justify-center gap-2.5 text-zinc-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-[11px]">Generating QR...</span>
+              </div>
+            ) : (
+              <div className="w-[180px] min-h-[140px] rounded-xl bg-zinc-950/60 border border-zinc-800/80 px-3 py-4 flex items-center justify-center">
+                <p className="text-[11px] text-rose-300/90 leading-relaxed">
+                  {cloudError || 'QR code unavailable'}
+                </p>
+              </div>
+            )}
 
-          <p className="text-[11px] text-zinc-500 leading-snug">
-            Point your phone camera at the QR code to save your photo
-          </p>
+            <p className="text-[11px] text-zinc-500 leading-snug">
+              Point your phone camera at the QR code to save your photo
+            </p>
+          </div>
+
+          {/* 4x6 Sheet Queue Status (2x3 + 2x3) */}
+          <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800/90 p-3.5 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-300">
+                4×6 Print Sheet
+              </span>
+              <span className="text-[11px] text-zinc-500">{printQueue.length}/2</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {[0, 1].map((slot) => {
+                const queuedItem = printQueue[slot]
+                return (
+                  <div
+                    key={slot}
+                    className="relative aspect-2/3 rounded-lg border border-dashed border-zinc-700/80 bg-zinc-950/60 overflow-hidden flex items-center justify-center"
+                  >
+                    {queuedItem ? (
+                      <>
+                        <img
+                          src={queuedItem.src}
+                          alt={`Print slot ${slot + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFromPrintQueue(queuedItem.id)}
+                          title="Remove from print sheet"
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-zinc-950/80 text-zinc-200 flex items-center justify-center hover:bg-rose-600 transition cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-[10px] text-zinc-600">2×3 #{slot + 1}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {printQueue.length === 1 && (
+              <button
+                type="button"
+                onClick={handlePrintSingleNow}
+                className="w-full py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-[11px] text-zinc-300 transition cursor-pointer"
+              >
+                Print 1 Photo Now
+              </button>
+            )}
+          </div>
         </aside>
       </main>
     </div>
