@@ -21,6 +21,8 @@ const MODEL_NAME = 'gpt-image-2.6-flare'
 const TARGET_WIDTH = 1024
 const TARGET_HEIGHT = 1536
 const TARGET_ASPECT = TARGET_WIDTH / TARGET_HEIGHT
+const RUPAY_LOGO_SRC = '/rupay-logo.png'
+const STRIP_HEIGHT = 176
 
 const FILTER_THEMES = [
   {
@@ -128,6 +130,112 @@ function prepareImageForApi(blob) {
 
     img.src = objectUrl
   })
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error(`Failed to load image: ${src}`))
+    img.src = src
+  })
+}
+
+async function applyRupayStrip(photoDataUrl) {
+  const [photoImg, logoImg] = await Promise.all([
+    loadImage(photoDataUrl),
+    loadImage(RUPAY_LOGO_SRC),
+  ])
+
+  const width = photoImg.width || TARGET_WIDTH
+  const height = photoImg.height || TARGET_HEIGHT
+  const stripHeight = Math.round((STRIP_HEIGHT / TARGET_HEIGHT) * height)
+  const visiblePhotoHeight = height - stripHeight
+
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+
+  // Draw the top/center portrait area into the space above the bottom strip
+  const srcCropY = Math.round((height - visiblePhotoHeight) * 0.35)
+  ctx.drawImage(
+    photoImg,
+    0,
+    srcCropY,
+    width,
+    visiblePhotoHeight,
+    0,
+    0,
+    width,
+    visiblePhotoHeight
+  )
+
+  // Subtle fade into the bottom strip
+  const fadeHeight = Math.round(stripHeight * 0.28)
+  const fadeGrad = ctx.createLinearGradient(
+    0,
+    visiblePhotoHeight - fadeHeight,
+    0,
+    visiblePhotoHeight
+  )
+  fadeGrad.addColorStop(0, 'rgba(9, 9, 11, 0)')
+  fadeGrad.addColorStop(1, 'rgba(9, 9, 11, 0.92)')
+  ctx.fillStyle = fadeGrad
+  ctx.fillRect(0, visiblePhotoHeight - fadeHeight, width, fadeHeight)
+
+  // Solid dark bottom strip
+  ctx.fillStyle = '#09090b'
+  ctx.fillRect(0, visiblePhotoHeight, width, stripHeight)
+
+  // Top hairline divider on the strip
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.12)'
+  ctx.fillRect(0, visiblePhotoHeight, width, 2)
+
+  // Centered RuPay logo + "x Anyma" inside the bottom strip
+  const maxLogoHeight = Math.round(stripHeight * 0.44)
+  const maxLogoWidth = Math.round(width * 0.34)
+  const logoAspect = logoImg.width / logoImg.height
+  let drawW = maxLogoHeight * logoAspect
+  let drawH = maxLogoHeight
+  if (drawW > maxLogoWidth) {
+    drawW = maxLogoWidth
+    drawH = drawW / logoAspect
+  }
+
+  const gap = Math.round(width * 0.024)
+  const xFontSize = Math.round(drawH * 0.72)
+  const brandFontSize = Math.round(drawH * 1.05)
+
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+
+  ctx.font = `700 ${xFontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  const xText = '×'
+  const xWidth = ctx.measureText(xText).width
+
+  ctx.font = `700 ${brandFontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  const brandText = 'Anyma'
+  const brandWidth = ctx.measureText(brandText).width
+
+  const totalWidth = drawW + gap + xWidth + gap + brandWidth
+  const startX = Math.round((width - totalWidth) / 2)
+  const centerY = Math.round(visiblePhotoHeight + stripHeight / 2)
+
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(logoImg, startX, Math.round(centerY - drawH / 2), drawW, drawH)
+
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `700 ${xFontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  ctx.fillText(xText, startX + drawW + gap, centerY)
+
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `700 ${brandFontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
+  ctx.fillText(brandText, startX + drawW + gap + xWidth + gap, centerY)
+
+  return canvas.toDataURL('image/png')
 }
 
 async function uploadToCloudinary(dataUrl, cloudName, uploadPreset) {
@@ -386,8 +494,15 @@ export default function App() {
         throw new Error('No image returned.')
       }
 
-      const generatedDataUrl = `data:image/png;base64,${b64}`
-      setResultImageUrl(generatedDataUrl)
+      const rawGeneratedDataUrl = `data:image/png;base64,${b64}`
+      let finalDataUrl = rawGeneratedDataUrl
+      try {
+        finalDataUrl = await applyRupayStrip(rawGeneratedDataUrl)
+      } catch (stripErr) {
+        console.warn('Could not composite RuPay strip, falling back to raw image:', stripErr)
+      }
+
+      setResultImageUrl(finalDataUrl)
       setCurrentResultId(`${Date.now()}-${Math.random().toString(36).slice(2, 7)}`)
       setPage('result')
 
@@ -400,7 +515,7 @@ export default function App() {
 
       if (hasCloudinaryConfig) {
         setIsUploadingCloud(true)
-        uploadToCloudinary(generatedDataUrl, cloudinaryCloudName, cloudinaryUploadPreset)
+        uploadToCloudinary(finalDataUrl, cloudinaryCloudName, cloudinaryUploadPreset)
           .then((secureUrl) => {
             setCloudinaryUrl(secureUrl)
           })
@@ -763,6 +878,21 @@ export default function App() {
               />
             )}
 
+            {/* Live RuPay x Anyma Bottom Strip Preview */}
+            {(!cameraError || sourcePreviewUrl) && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[11.5%] bg-zinc-950 border-t border-white/12 flex items-center justify-center gap-2.5 z-10 px-4">
+                <img
+                  src={RUPAY_LOGO_SRC}
+                  alt="RuPay"
+                  className="h-[44%] max-w-[34%] object-contain select-none"
+                />
+                <span className="text-white text-lg font-bold leading-none select-none">×</span>
+                <span className="text-white text-[1.75rem] font-bold tracking-tight leading-none select-none">
+                  Anyma
+                </span>
+              </div>
+            )}
+
             {isGenerating && (
               <div className="absolute inset-0 bg-zinc-950/75 backdrop-blur-xs flex flex-col items-center justify-center gap-3">
                 <div className="relative flex items-center justify-center">
@@ -865,7 +995,7 @@ export default function App() {
               onMouseLeave={() => setShowingOriginal(false)}
               onTouchStart={() => setShowingOriginal(true)}
               onTouchEnd={() => setShowingOriginal(false)}
-              className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] bg-zinc-950/80 text-zinc-300 border border-zinc-800 backdrop-blur-md hover:text-white select-none cursor-pointer"
+              className="absolute bottom-[13.5%] right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] bg-zinc-950/80 text-zinc-300 border border-zinc-800 backdrop-blur-md hover:text-white select-none cursor-pointer"
             >
               <Eye className="w-3 h-3" />
               <span>{showingOriginal ? 'Original' : 'Hold to compare'}</span>
