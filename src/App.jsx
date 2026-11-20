@@ -37,7 +37,7 @@ const FILTER_THEMES = [
     buttonGradient: 'from-rose-600 to-cyan-600 hover:from-rose-500 hover:to-cyan-500',
     glowShadow: 'shadow-[0_0_50px_-15px_rgba(244,63,94,0.28)]',
     lightingPrompt:
-      'Cut dramatic, clearly visible diagonal neon red volumetric light beams and laser-like spotlight rays through atmospheric studio haze from the top-left behind the subject, paired with intense cyan/teal rim lighting and subtle cyan volumetric light shafts from the right',
+      'Drench the subject directly in intense dual-tone studio gel lighting—NOT just in the background: cast bold, saturated neon crimson-red light across the subject’s hair, shoulders, clothing, and one side of the face, while flooding the front-left of the face, cheekbones, forehead, and neck with vivid cyan-teal gel light, plus glowing crimson light flares, atmospheric haze, and soft diagonal light streaks sweeping across both the foreground and the dark studio backdrop',
   },
   {
     id: 'violet-blue',
@@ -50,7 +50,7 @@ const FILTER_THEMES = [
     buttonGradient: 'from-fuchsia-600 to-blue-600 hover:from-fuchsia-500 hover:to-blue-500',
     glowShadow: 'shadow-[0_0_50px_-15px_rgba(217,70,239,0.28)]',
     lightingPrompt:
-      'Cut dramatic, clearly visible diagonal neon magenta-violet volumetric light beams and laser-like spotlight rays through atmospheric studio haze from the top-left behind the subject, paired with intense electric cobalt-blue rim lighting and subtle blue volumetric light shafts from the right',
+      'Drench the subject directly in intense dual-tone studio gel lighting—NOT just in the background: cast bold, saturated neon magenta-violet light across the subject’s hair, shoulders, clothing, and one side of the face, while flooding the front-left of the face, cheekbones, forehead, and neck with vivid electric cobalt-blue gel light, plus glowing magenta light flares, atmospheric haze, and soft diagonal light streaks sweeping across both the foreground and the dark studio backdrop',
   },
   {
     id: 'amber-teal',
@@ -63,7 +63,7 @@ const FILTER_THEMES = [
     buttonGradient: 'from-amber-500 to-teal-600 hover:from-amber-400 hover:to-teal-500',
     glowShadow: 'shadow-[0_0_50px_-15px_rgba(245,158,11,0.25)]',
     lightingPrompt:
-      'Cut dramatic, clearly visible diagonal golden-amber orange volumetric light beams and laser-like spotlight rays through atmospheric studio haze from the top-left behind the subject, paired with intense deep teal-cyan rim lighting and subtle teal volumetric light shafts from the right',
+      'Drench the subject directly in intense dual-tone studio gel lighting—NOT just in the background: cast bold, saturated golden-amber orange light across the subject’s hair, shoulders, clothing, and one side of the face, while flooding the front-left of the face, cheekbones, forehead, and neck with vivid deep teal-cyan gel light, plus glowing amber light flares, atmospheric haze, and soft diagonal light streaks sweeping across both the foreground and the dark studio backdrop',
   },
   {
     id: 'emerald-magenta',
@@ -76,12 +76,12 @@ const FILTER_THEMES = [
     buttonGradient: 'from-emerald-600 to-pink-600 hover:from-emerald-500 hover:to-pink-500',
     glowShadow: 'shadow-[0_0_50px_-15px_rgba(16,185,129,0.25)]',
     lightingPrompt:
-      'Cut dramatic, clearly visible diagonal neon emerald-green volumetric light beams and laser-like spotlight rays through atmospheric studio haze from the top-left behind the subject, paired with intense hot neon pink/magenta rim lighting and subtle pink volumetric light shafts from the right',
+      'Drench the subject directly in intense dual-tone studio gel lighting—NOT just in the background: cast bold, saturated neon emerald-green light across the subject’s hair, shoulders, clothing, and one side of the face, while flooding the front-left of the face, cheekbones, forehead, and neck with vivid hot neon pink/magenta gel light, plus glowing emerald light flares, atmospheric haze, and soft diagonal light streaks sweeping across both the foreground and the dark studio backdrop',
   },
 ]
 
 function buildPrompt(theme) {
-  return `Edit this exact photo by applying a dramatic cyberpunk studio lighting effect over a clean, empty, dark studio background. Keep the person 100% identical to the input image: strictly preserve their exact facial structure, facial features, eyes, nose, mouth, skin texture, hair, beard, glasses/accessories (do not add or remove glasses), clothing, expression, pose, and camera framing. ${theme.lightingPrompt}, deep blacks, high contrast, glossy specular reflections, and futuristic music video color grading—no cityscapes, no buildings, no neon text/signs, and no street props.`
+  return `Edit this exact photo by applying dramatic, heavily saturated split-color neon studio gel lighting directly across the subject's face, skin, hair, and clothing over a clean, dark moody studio background. Keep the person 100% identical to the input image: strictly preserve their exact facial structure, facial features, eyes, nose, mouth, hair, beard, glasses/accessories (do not add or remove glasses), clothing, expression, pose, and camera framing. ${theme.lightingPrompt}. Make the colored gel lights strongly wrap over the skin, hair, and clothes with rich color spill, deep dramatic shadows, high contrast, glossy specular highlights, soft foreground light haze/lens glow, and futuristic music-video color grading—no cityscapes, no buildings, no neon text/signs, and no street props.`
 }
 
 function prepareImageForApi(blob) {
