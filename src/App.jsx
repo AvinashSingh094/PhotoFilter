@@ -22,6 +22,7 @@ const TARGET_WIDTH = 1024
 const TARGET_HEIGHT = 1536
 const TARGET_ASPECT = TARGET_WIDTH / TARGET_HEIGHT
 const RUPAY_LOGO_SRC = '/rupay-logo.png'
+const ANYMA_LOGO_SRC = '/anyma-logo.png'
 const STRIP_HEIGHT = 176
 
 const FILTER_THEMES = [
@@ -143,9 +144,10 @@ function loadImage(src) {
 }
 
 async function applyRupayStrip(photoDataUrl) {
-  const [photoImg, logoImg] = await Promise.all([
+  const [photoImg, rupayImg, anymaImg] = await Promise.all([
     loadImage(photoDataUrl),
     loadImage(RUPAY_LOGO_SRC),
+    loadImage(ANYMA_LOGO_SRC),
   ])
 
   const width = photoImg.width || TARGET_WIDTH
@@ -193,47 +195,54 @@ async function applyRupayStrip(photoDataUrl) {
   ctx.fillStyle = 'rgba(255, 255, 255, 0.12)'
   ctx.fillRect(0, visiblePhotoHeight, width, 2)
 
-  // Centered RuPay logo + "x Anyma" inside the bottom strip
-  const maxLogoHeight = Math.round(stripHeight * 0.44)
-  const maxLogoWidth = Math.round(width * 0.34)
-  const logoAspect = logoImg.width / logoImg.height
-  let drawW = maxLogoHeight * logoAspect
-  let drawH = maxLogoHeight
-  if (drawW > maxLogoWidth) {
-    drawW = maxLogoWidth
-    drawH = drawW / logoAspect
+  // Centered RuPay logo × Anyma logo inside the bottom strip
+  const maxRupayHeight = Math.round(stripHeight * 0.44)
+  const maxRupayWidth = Math.round(width * 0.34)
+  const rupayAspect = rupayImg.width / rupayImg.height
+  let rupayW = maxRupayHeight * rupayAspect
+  let rupayH = maxRupayHeight
+  if (rupayW > maxRupayWidth) {
+    rupayW = maxRupayWidth
+    rupayH = rupayW / rupayAspect
   }
 
-  const gap = Math.round(width * 0.024)
-  const xFontSize = Math.round(drawH * 0.72)
-  const brandFontSize = Math.round(drawH * 1.05)
+  const maxAnymaHeight = Math.round(stripHeight * 0.56)
+  const maxAnymaWidth = Math.round(width * 0.34)
+  const anymaAspect = anymaImg.width / anymaImg.height
+  let anymaW = maxAnymaHeight * anymaAspect
+  let anymaH = maxAnymaHeight
+  if (anymaW > maxAnymaWidth) {
+    anymaW = maxAnymaWidth
+    anymaH = anymaW / anymaAspect
+  }
+
+  const gap = Math.round(width * 0.028)
+  const xFontSize = Math.round(rupayH * 0.72)
 
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
-
   ctx.font = `700 ${xFontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
   const xText = '×'
   const xWidth = ctx.measureText(xText).width
 
-  ctx.font = `700 ${brandFontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
-  const brandText = 'Anyma'
-  const brandWidth = ctx.measureText(brandText).width
-
-  const totalWidth = drawW + gap + xWidth + gap + brandWidth
+  const totalWidth = rupayW + gap + xWidth + gap + anymaW
   const startX = Math.round((width - totalWidth) / 2)
   const centerY = Math.round(visiblePhotoHeight + stripHeight / 2)
 
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(logoImg, startX, Math.round(centerY - drawH / 2), drawW, drawH)
+  ctx.drawImage(rupayImg, startX, Math.round(centerY - rupayH / 2), rupayW, rupayH)
 
   ctx.fillStyle = '#ffffff'
-  ctx.font = `700 ${xFontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
-  ctx.fillText(xText, startX + drawW + gap, centerY)
+  ctx.fillText(xText, startX + rupayW + gap, centerY)
 
-  ctx.fillStyle = '#ffffff'
-  ctx.font = `700 ${brandFontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`
-  ctx.fillText(brandText, startX + drawW + gap + xWidth + gap, centerY)
+  ctx.drawImage(
+    anymaImg,
+    Math.round(startX + rupayW + gap + xWidth + gap),
+    Math.round(centerY - anymaH / 2),
+    anymaW,
+    anymaH
+  )
 
   return canvas.toDataURL('image/png')
 }
@@ -887,9 +896,11 @@ export default function App() {
                   className="h-[44%] max-w-[34%] object-contain select-none"
                 />
                 <span className="text-white text-lg font-bold leading-none select-none">×</span>
-                <span className="text-white text-[1.75rem] font-bold tracking-tight leading-none select-none">
-                  Anyma
-                </span>
+                <img
+                  src={ANYMA_LOGO_SRC}
+                  alt="Anyma Presents Aeden"
+                  className="h-[56%] max-w-[34%] object-contain select-none"
+                />
               </div>
             )}
 
