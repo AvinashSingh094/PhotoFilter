@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
@@ -8,6 +9,7 @@ import OpenAI, { toFile } from 'openai'
 dotenv.config()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const STYLE_REF_PATH = path.join(__dirname, 'public', 'style-ref.jpg')
 const app = express()
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -42,9 +44,18 @@ app.post('/api/filter', upload.single('image'), async (req, res) => {
       type: req.file.mimetype || 'image/jpeg',
     })
 
+    let imagesInput = imageFile
+    if (fs.existsSync(STYLE_REF_PATH)) {
+      const styleRefBuffer = await fs.promises.readFile(STYLE_REF_PATH)
+      const styleRefFile = await toFile(styleRefBuffer, 'style-ref.jpg', {
+        type: 'image/jpeg',
+      })
+      imagesInput = [imageFile, styleRefFile]
+    }
+
     const response = await client.images.edit({
       model: 'gpt-image-2.6-flare',
-      image: imageFile,
+      image: imagesInput,
       prompt,
       quality: 'high',
       size: '1024x1536',

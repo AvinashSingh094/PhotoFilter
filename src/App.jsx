@@ -23,13 +23,14 @@ const TARGET_HEIGHT = 1536
 const TARGET_ASPECT = TARGET_WIDTH / TARGET_HEIGHT
 const RUPAY_LOGO_SRC = '/rupay-logo.png'
 const ANYMA_LOGO_SRC = '/anyma-logo.png'
+const STYLE_REF_SRC = '/style-ref.jpg'
 const STRIP_HEIGHT = 176
 
 const FILTER_THEMES = [
   {
     id: 'crimson-cyan',
     name: 'Crimson & Cyan',
-    subtitle: 'Neon red beams · Teal rim light',
+    subtitle: 'Crimson light waves · Cyan glow',
     primarySwatch: '#f43f5e',
     secondarySwatch: '#06b6d4',
     previewBg:
@@ -37,12 +38,12 @@ const FILTER_THEMES = [
     buttonGradient: 'from-rose-600 to-cyan-600 hover:from-rose-500 hover:to-cyan-500',
     glowShadow: 'shadow-[0_0_50px_-15px_rgba(244,63,94,0.28)]',
     lightingPrompt:
-      'Drench the subject directly in intense dual-tone studio gel lighting—NOT just in the background: cast bold, saturated neon crimson-red light across the subject’s hair, shoulders, clothing, and one side of the face, while flooding the front-left of the face, cheekbones, forehead, and neck with vivid cyan-teal gel light, plus glowing crimson light flares, atmospheric haze, and soft diagonal light streaks sweeping across both the foreground and the dark studio backdrop',
+      'Match the exact visual style, lighting, color palette, smooth glossy airbrushed skin finish, and foreground wave-like neon red light-leak smear of Image 2: deep glowing crimson-red washes across the hair, background, and a bright sweeping crimson light wave/flare blooming across the lower-left foreground and chest, paired with intense electric cyan-teal highlights glowing across the left side of the face, nose, cheekbones, forehead, and neck, plus warm glowing highlights on the right cheek/jaw and pitch-black deep shadows',
   },
   {
     id: 'violet-blue',
     name: 'Ultraviolet & Blue',
-    subtitle: 'Magenta-purple rays · Electric blue rim',
+    subtitle: 'Magenta light waves · Electric blue glow',
     primarySwatch: '#d946ef',
     secondarySwatch: '#3b82f6',
     previewBg:
@@ -50,12 +51,12 @@ const FILTER_THEMES = [
     buttonGradient: 'from-fuchsia-600 to-blue-600 hover:from-fuchsia-500 hover:to-blue-500',
     glowShadow: 'shadow-[0_0_50px_-15px_rgba(217,70,239,0.28)]',
     lightingPrompt:
-      'Drench the subject directly in intense dual-tone studio gel lighting—NOT just in the background: cast bold, saturated neon magenta-violet light across the subject’s hair, shoulders, clothing, and one side of the face, while flooding the front-left of the face, cheekbones, forehead, and neck with vivid electric cobalt-blue gel light, plus glowing magenta light flares, atmospheric haze, and soft diagonal light streaks sweeping across both the foreground and the dark studio backdrop',
+      'Match the exact visual style, lighting structure, smooth glossy airbrushed finish, and sweeping foreground light-wave smear of Image 2, but remap its crimson-red tones to vivid neon magenta-violet and its cyan-teal tones to electric cobalt-blue: glowing magenta-violet washes across the hair, background, and a bright sweeping magenta light wave/flare blooming across the lower-left foreground and chest, paired with intense electric blue highlights across the face, cheekbones, and neck against pitch-black deep shadows',
   },
   {
     id: 'amber-teal',
     name: 'Cyber Gold & Teal',
-    subtitle: 'Warm amber beams · Deep cyan rim',
+    subtitle: 'Golden light waves · Deep cyan glow',
     primarySwatch: '#f59e0b',
     secondarySwatch: '#14b8a6',
     previewBg:
@@ -63,12 +64,12 @@ const FILTER_THEMES = [
     buttonGradient: 'from-amber-500 to-teal-600 hover:from-amber-400 hover:to-teal-500',
     glowShadow: 'shadow-[0_0_50px_-15px_rgba(245,158,11,0.25)]',
     lightingPrompt:
-      'Drench the subject directly in intense dual-tone studio gel lighting—NOT just in the background: cast bold, saturated golden-amber orange light across the subject’s hair, shoulders, clothing, and one side of the face, while flooding the front-left of the face, cheekbones, forehead, and neck with vivid deep teal-cyan gel light, plus glowing amber light flares, atmospheric haze, and soft diagonal light streaks sweeping across both the foreground and the dark studio backdrop',
+      'Match the exact visual style, lighting structure, smooth glossy airbrushed finish, and sweeping foreground light-wave smear of Image 2, but remap its crimson-red tones to glowing golden-amber orange and its cyan-teal tones to deep teal-cyan: warm golden-amber washes across the hair, background, and a bright sweeping amber light wave/flare blooming across the lower-left foreground and chest, paired with intense deep teal-cyan highlights across the face, cheekbones, and neck against pitch-black deep shadows',
   },
   {
     id: 'emerald-magenta',
     name: 'Acid Green & Pink',
-    subtitle: 'Neon emerald rays · Hot pink rim',
+    subtitle: 'Emerald light waves · Hot pink glow',
     primarySwatch: '#10b981',
     secondarySwatch: '#ec4899',
     previewBg:
@@ -76,12 +77,12 @@ const FILTER_THEMES = [
     buttonGradient: 'from-emerald-600 to-pink-600 hover:from-emerald-500 hover:to-pink-500',
     glowShadow: 'shadow-[0_0_50px_-15px_rgba(16,185,129,0.25)]',
     lightingPrompt:
-      'Drench the subject directly in intense dual-tone studio gel lighting—NOT just in the background: cast bold, saturated neon emerald-green light across the subject’s hair, shoulders, clothing, and one side of the face, while flooding the front-left of the face, cheekbones, forehead, and neck with vivid hot neon pink/magenta gel light, plus glowing emerald light flares, atmospheric haze, and soft diagonal light streaks sweeping across both the foreground and the dark studio backdrop',
+      'Match the exact visual style, lighting structure, smooth glossy airbrushed finish, and sweeping foreground light-wave smear of Image 2, but remap its crimson-red tones to neon emerald-green and its cyan-teal tones to hot neon pink/magenta: glowing emerald-green washes across the hair, background, and a bright sweeping green light wave/flare blooming across the lower-left foreground and chest, paired with intense hot pink highlights across the face, cheekbones, and neck against pitch-black deep shadows',
   },
 ]
 
 function buildPrompt(theme) {
-  return `Edit this exact photo by applying dramatic, heavily saturated split-color neon studio gel lighting directly across the subject's face, skin, hair, and clothing over a clean, dark moody studio background. Keep the person 100% identical to the input image: strictly preserve their exact facial structure, facial features, eyes, nose, mouth, hair, beard, glasses/accessories (do not add or remove glasses), clothing, expression, pose, and camera framing. ${theme.lightingPrompt}. Make the colored gel lights strongly wrap over the skin, hair, and clothes with rich color spill, deep dramatic shadows, high contrast, glossy specular highlights, soft foreground light haze/lens glow, and futuristic music-video color grading—no cityscapes, no buildings, no neon text/signs, and no street props.`
+  return `Transform Image 1 (the person's portrait) using ONLY the exact lighting, color grading, dreamy soft-focus glow, sweeping foreground light waves, and stylized neon music-art aesthetic of Image 2 (the style reference). STRICTLY keep the person from Image 1 100% identical in identity: preserve their exact face, facial structure, eyes, nose, mouth, hair style, beard/facial hair, clothing, pose, expression, and existing glasses/accessories—DO NOT copy the person, sunglasses, headphones, braids, or clothing from Image 2. ${theme.lightingPrompt}. Replicate Image 2's exact dreamy soft-bloom texture, intense split-color light wrapping directly over the face and hair, glowing sweeping light-leak waves across the lower foreground and dark blurred background, ultra-deep velvety black shadows, and surreal electronic-music album-art look—no cityscapes, no straight laser beams, no text.`
 }
 
 function prepareImageForApi(blob) {
@@ -466,6 +467,12 @@ export default function App() {
           return
         }
 
+        const refRes = await fetch(STYLE_REF_SRC)
+        const refBlob = await refRes.blob()
+        const styleRefFile = new File([refBlob], 'style-ref.jpg', {
+          type: refBlob.type || 'image/jpeg',
+        })
+
         const client = new OpenAI({
           apiKey: trimmedKey,
           baseURL: `${window.location.origin}/openai-api/v1`,
@@ -475,7 +482,7 @@ export default function App() {
 
         const response = await client.images.edit({
           model: MODEL_NAME,
-          image: imageFile,
+          image: [imageFile, styleRefFile],
           prompt,
           quality: 'high',
           size: '1024x1536',
