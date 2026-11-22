@@ -719,38 +719,38 @@ export default function App() {
     // 1. HOME PAGE: Select Filter Color
     if (page === 'home') {
       return (
-        <main className="w-full max-w-md flex flex-col gap-5">
-          <div className="text-center space-y-1.5">
-            <h1 className="text-xl font-medium tracking-tight text-zinc-100">
+        <main className="w-full max-w-[820px] flex flex-col gap-8 sm:gap-10">
+          <div className="text-center space-y-2.5">
+            <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-white drop-shadow-sm">
               Choose Filter Style
             </h1>
-            <p className="text-xs text-zinc-400">
+            <p className="text-sm sm:text-xl text-zinc-200/85">
               Select a neon lighting palette before capturing your portrait
             </p>
           </div>
 
           {printQueue.length > 0 && (
-            <div className="rounded-xl bg-zinc-900/80 border border-zinc-800 px-3 py-2.5 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
+            <div className="rounded-2xl bg-zinc-900/65 backdrop-blur-md border border-white/15 px-5 py-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 min-w-0">
                 <img
                   src={printQueue[0].src}
                   alt="Queued print 1"
-                  className="w-7 h-10 rounded-md object-cover border border-zinc-700 shrink-0"
+                  className="w-11 h-16 rounded-lg object-cover border border-white/20 shrink-0"
                 />
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-zinc-200 truncate">
+                  <p className="text-base sm:text-lg font-medium text-white truncate">
                     4×6 Print Queue ({printQueue.length}/2)
                   </p>
-                  <p className="text-[11px] text-zinc-400 truncate">
+                  <p className="text-xs sm:text-sm text-zinc-300 truncate">
                     Next photo will print together as 2×3 pair
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handlePrintSingleNow}
-                  className="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition cursor-pointer"
+                  className="text-sm sm:text-base px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-medium transition cursor-pointer"
                 >
                   Print Now
                 </button>
@@ -758,15 +758,15 @@ export default function App() {
                   type="button"
                   onClick={() => removeFromPrintQueue(printQueue[0].id)}
                   title="Clear queue"
-                  className="p-1 text-zinc-500 hover:text-zinc-200 transition cursor-pointer"
+                  className="p-2 text-zinc-300 hover:text-white transition cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-5 sm:gap-6">
             {FILTER_THEMES.map((theme) => {
               const isSelected = theme.id === selectedThemeId
               return (
@@ -774,44 +774,44 @@ export default function App() {
                   key={theme.id}
                   type="button"
                   onClick={() => setSelectedThemeId(theme.id)}
-                  className={`group relative rounded-2xl p-3.5 text-left transition border cursor-pointer flex flex-col justify-between aspect-4/4.5 overflow-hidden ${
+                  className={`group relative rounded-3xl p-5 sm:p-7 text-left transition border-2 cursor-pointer flex flex-col justify-between aspect-4/4.3 overflow-hidden shadow-2xl ${
                     isSelected
-                      ? 'border-zinc-200 ring-1 ring-zinc-200/50'
-                      : 'border-zinc-800/90 hover:border-zinc-700'
+                      ? 'border-white ring-2 ring-white/40 scale-[1.01]'
+                      : 'border-white/15 hover:border-white/35'
                   }`}
                   style={{ background: theme.previewBg }}
                 >
                   <div
-                    className="pointer-events-none absolute -top-10 -left-10 w-40 h-40 rotate-35 opacity-35 blur-xl transition-opacity group-hover:opacity-55"
+                    className="pointer-events-none absolute -top-12 -left-12 w-56 h-56 rotate-35 opacity-45 blur-2xl transition-opacity group-hover:opacity-65"
                     style={{
                       background: `linear-gradient(90deg, transparent, ${theme.primarySwatch}, transparent)`,
                     }}
                   />
 
                   <div className="relative flex items-center justify-between">
-                    <div className="flex items-center -space-x-1.5">
+                    <div className="flex items-center -space-x-2">
                       <span
-                        className="w-4 h-4 rounded-full border border-zinc-950/60"
+                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-zinc-950/60"
                         style={{ backgroundColor: theme.primarySwatch }}
                       />
                       <span
-                        className="w-4 h-4 rounded-full border border-zinc-950/60"
+                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-zinc-950/60"
                         style={{ backgroundColor: theme.secondarySwatch }}
                       />
                     </div>
 
                     {isSelected && (
-                      <span className="w-5 h-5 rounded-full bg-zinc-100 text-zinc-950 flex items-center justify-center">
-                        <Check className="w-3 h-3 stroke-[2.5]" />
+                      <span className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white text-zinc-950 flex items-center justify-center shadow-md">
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.75]" />
                       </span>
                     )}
                   </div>
 
-                  <div className="relative mt-auto pt-8">
-                    <div className="text-sm font-medium text-zinc-100 leading-snug">
+                  <div className="relative mt-auto pt-10">
+                    <div className="text-lg sm:text-2xl font-semibold text-white leading-snug">
                       {theme.name}
                     </div>
-                    <div className="text-[11px] text-zinc-400 mt-0.5 leading-tight">
+                    <div className="text-xs sm:text-base text-zinc-200/85 mt-1 leading-snug">
                       {theme.subtitle}
                     </div>
                   </div>
@@ -823,10 +823,10 @@ export default function App() {
           <button
             type="button"
             onClick={goToCapture}
-            className={`w-full h-11 rounded-xl bg-gradient-to-r ${selectedTheme.buttonGradient} text-white text-sm font-medium inline-flex items-center justify-center gap-2 transition cursor-pointer`}
+            className={`w-full h-14 sm:h-20 rounded-2xl bg-gradient-to-r ${selectedTheme.buttonGradient} text-white text-lg sm:text-2xl font-semibold inline-flex items-center justify-center gap-3 shadow-xl transition cursor-pointer`}
           >
             <span>Continue to Camera</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </main>
       )
@@ -835,37 +835,37 @@ export default function App() {
     // 2. CAPTURE PAGE
     if (page === 'capture') {
       return (
-        <main className="w-full max-w-sm flex flex-col items-center gap-3.5">
+        <main className="w-full max-w-[820px] flex flex-col items-center gap-5 sm:gap-6">
           {/* Top Bar */}
           <div className="w-full flex items-center justify-between">
             <button
               type="button"
               onClick={goHome}
               disabled={isGenerating}
-              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-100 disabled:opacity-40 transition cursor-pointer"
+              className="inline-flex items-center gap-2 text-sm sm:text-lg text-zinc-200 hover:text-white disabled:opacity-40 transition cursor-pointer"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Change Color</span>
             </button>
 
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300">
-              <span className="flex items-center -space-x-1">
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-zinc-900/60 backdrop-blur-md border border-white/15 text-xs sm:text-base text-white">
+              <span className="flex items-center -space-x-1.5">
                 <span
-                  className="w-2.5 h-2.5 rounded-full"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full"
                   style={{ backgroundColor: selectedTheme.primarySwatch }}
                 />
                 <span
-                  className="w-2.5 h-2.5 rounded-full"
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full"
                   style={{ backgroundColor: selectedTheme.secondarySwatch }}
                 />
               </span>
-              <span>{selectedTheme.name}</span>
+              <span className="font-medium">{selectedTheme.name}</span>
             </div>
           </div>
 
           {/* 2:3 Portrait Viewport */}
           <div
-            className={`relative w-full aspect-2/3 max-h-[74svh] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/90 ${selectedTheme.glowShadow} flex items-center justify-center`}
+            className={`relative w-full aspect-2/3 max-h-[70svh] rounded-3xl overflow-hidden bg-zinc-900/80 border border-white/15 ${selectedTheme.glowShadow} flex items-center justify-center shadow-2xl`}
           >
             {!sourcePreviewUrl && !cameraError && (
               <video
@@ -878,9 +878,11 @@ export default function App() {
             )}
 
             {!sourcePreviewUrl && cameraError && (
-              <div className="px-6 text-center flex flex-col items-center gap-3">
-                <Camera className="w-8 h-8 text-zinc-600" />
-                <p className="text-xs text-zinc-400 leading-relaxed">{cameraError}</p>
+              <div className="px-8 text-center flex flex-col items-center gap-4">
+                <Camera className="w-12 h-12 sm:w-16 sm:h-16 text-zinc-400" />
+                <p className="text-sm sm:text-lg text-zinc-300 leading-relaxed max-w-md">
+                  {cameraError}
+                </p>
               </div>
             )}
 
@@ -894,13 +896,15 @@ export default function App() {
 
             {/* Live RuPay x Anyma Bottom Strip Preview */}
             {(!cameraError || sourcePreviewUrl) && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[11.5%] bg-zinc-950 border-t border-white/12 flex items-center justify-center gap-2.5 z-10 px-4">
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[11.5%] bg-zinc-950 border-t border-white/12 flex items-center justify-center gap-3.5 z-10 px-6">
                 <img
                   src={RUPAY_LOGO_SRC}
                   alt="RuPay"
                   className="h-[44%] max-w-[34%] object-contain select-none"
                 />
-                <span className="text-white text-lg font-bold leading-none select-none">×</span>
+                <span className="text-white text-xl sm:text-3xl font-bold leading-none select-none">
+                  ×
+                </span>
                 <img
                   src={ANYMA_LOGO_SRC}
                   alt="Anyma Presents Aeden"
@@ -910,15 +914,15 @@ export default function App() {
             )}
 
             {isGenerating && (
-              <div className="absolute inset-0 bg-zinc-950/75 backdrop-blur-xs flex flex-col items-center justify-center gap-3">
+              <div className="absolute inset-0 bg-zinc-950/75 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
                 <div className="relative flex items-center justify-center">
                   <div
-                    className="absolute w-12 h-12 rounded-full blur-md animate-pulse opacity-35"
+                    className="absolute w-20 h-20 rounded-full blur-xl animate-pulse opacity-45"
                     style={{ backgroundColor: selectedTheme.primarySwatch }}
                   />
-                  <Loader2 className="w-7 h-7 text-zinc-100 animate-spin relative" />
+                  <Loader2 className="w-11 h-11 sm:w-14 sm:h-14 text-white animate-spin relative" />
                 </div>
-                <p className="text-xs tracking-wider uppercase text-zinc-200 font-medium">
+                <p className="text-sm sm:text-lg tracking-wider uppercase text-zinc-100 font-semibold">
                   Applying filter...
                 </p>
               </div>
@@ -926,8 +930,8 @@ export default function App() {
           </div>
 
           {error && (
-            <div className="w-full flex items-start gap-2 text-xs text-rose-300 bg-rose-950/40 border border-rose-500/30 rounded-xl px-3.5 py-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+            <div className="w-full flex items-start gap-3 text-sm sm:text-base text-rose-200 bg-rose-950/60 backdrop-blur-md border border-rose-400/40 rounded-2xl px-5 py-3.5">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-300" />
               <span>{error}</span>
             </div>
           )}
@@ -941,36 +945,36 @@ export default function App() {
           />
 
           {!sourcePreviewUrl ? (
-            <div className="w-full flex items-center gap-2.5">
+            <div className="w-full flex items-center gap-4">
               <button
                 type="button"
                 onClick={capturePhoto}
                 disabled={!stream}
-                className="flex-1 h-11 rounded-xl bg-zinc-100 text-zinc-950 text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-white disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+                className="flex-1 h-14 sm:h-20 rounded-2xl bg-white text-zinc-950 text-lg sm:text-2xl font-semibold inline-flex items-center justify-center gap-3 hover:bg-zinc-100 disabled:opacity-40 disabled:pointer-events-none shadow-xl transition cursor-pointer"
               >
-                <Camera className="w-4 h-4" />
+                <Camera className="w-5 h-5 sm:w-7 sm:h-7" />
                 <span>Capture</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="h-11 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm inline-flex items-center justify-center gap-2 hover:bg-zinc-800/80 hover:text-zinc-100 transition cursor-pointer"
+                className="h-14 sm:h-20 px-6 sm:px-8 rounded-2xl bg-zinc-900/65 backdrop-blur-md border border-white/15 text-zinc-100 text-base sm:text-xl font-medium inline-flex items-center justify-center gap-2.5 hover:bg-zinc-800/80 transition cursor-pointer"
                 title="Upload an image instead"
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span>Upload</span>
               </button>
             </div>
           ) : (
-            <div className="w-full flex items-center gap-2.5">
+            <div className="w-full flex items-center gap-4">
               <button
                 type="button"
                 onClick={handleRetake}
                 disabled={isGenerating}
-                className="h-11 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm inline-flex items-center justify-center gap-2 hover:bg-zinc-800/80 disabled:opacity-40 transition cursor-pointer"
+                className="h-14 sm:h-20 px-6 sm:px-8 rounded-2xl bg-zinc-900/65 backdrop-blur-md border border-white/15 text-zinc-100 text-base sm:text-xl font-medium inline-flex items-center justify-center gap-2.5 hover:bg-zinc-800/80 disabled:opacity-40 transition cursor-pointer"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span>Retake</span>
               </button>
 
@@ -978,7 +982,7 @@ export default function App() {
                 type="button"
                 onClick={applyFilter}
                 disabled={isGenerating}
-                className={`flex-1 h-11 rounded-xl bg-gradient-to-r ${selectedTheme.buttonGradient} text-white text-sm font-medium inline-flex items-center justify-center disabled:opacity-50 transition cursor-pointer`}
+                className={`flex-1 h-14 sm:h-20 rounded-2xl bg-gradient-to-r ${selectedTheme.buttonGradient} text-white text-lg sm:text-2xl font-semibold inline-flex items-center justify-center disabled:opacity-50 shadow-xl transition cursor-pointer`}
               >
                 <span>Apply Filter</span>
               </button>
@@ -990,11 +994,11 @@ export default function App() {
 
     // 3. RESULT PAGE
     return (
-      <main className="w-full max-w-2xl flex flex-col md:flex-row items-center justify-center gap-6">
-        {/* Left: Portrait + Action Buttons */}
-        <div className="w-full max-w-sm flex flex-col items-center gap-3.5">
+      <main className="w-full max-w-[820px] xl:max-w-5xl flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8">
+        {/* Left/Top: Portrait + Action Buttons */}
+        <div className="w-full max-w-[700px] xl:max-w-lg flex flex-col items-center gap-5">
           <div
-            className={`relative w-full aspect-2/3 max-h-[75svh] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/90 ${selectedTheme.glowShadow} flex items-center justify-center`}
+            className={`relative w-full aspect-2/3 max-h-[58svh] xl:max-h-[75svh] rounded-3xl overflow-hidden bg-zinc-900/80 border border-white/15 ${selectedTheme.glowShadow} flex items-center justify-center shadow-2xl`}
           >
             <img
               src={showingOriginal ? sourcePreviewUrl : resultImageUrl}
@@ -1009,21 +1013,21 @@ export default function App() {
               onMouseLeave={() => setShowingOriginal(false)}
               onTouchStart={() => setShowingOriginal(true)}
               onTouchEnd={() => setShowingOriginal(false)}
-              className="absolute bottom-[13.5%] right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] bg-zinc-950/80 text-zinc-300 border border-zinc-800 backdrop-blur-md hover:text-white select-none cursor-pointer"
+              className="absolute bottom-[13.5%] right-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-base bg-zinc-950/75 text-zinc-100 border border-white/20 backdrop-blur-md hover:text-white select-none cursor-pointer"
             >
-              <Eye className="w-3 h-3" />
+              <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>{showingOriginal ? 'Original' : 'Hold to compare'}</span>
             </button>
           </div>
 
-          <div className="w-full flex items-center gap-2">
+          <div className="w-full flex items-center gap-3.5">
             <button
               type="button"
               onClick={goHome}
               title="Home"
-              className="h-11 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm inline-flex items-center justify-center gap-2 hover:bg-zinc-800/80 hover:text-zinc-100 transition cursor-pointer"
+              className="h-14 sm:h-[72px] px-5 sm:px-7 rounded-2xl bg-zinc-900/65 backdrop-blur-md border border-white/15 text-zinc-100 text-base sm:text-xl font-medium inline-flex items-center justify-center gap-2.5 hover:bg-zinc-800/80 transition cursor-pointer"
             >
-              <Home className="w-4 h-4" />
+              <Home className="w-5 h-5 sm:w-6 sm:h-6" />
               <span>Home</span>
             </button>
 
@@ -1031,27 +1035,27 @@ export default function App() {
               type="button"
               onClick={handlePrintAction}
               disabled={isCurrentInQueue}
-              className={`flex-1 h-11 rounded-xl border text-sm font-medium inline-flex items-center justify-center gap-2 transition cursor-pointer ${
+              className={`flex-1 h-14 sm:h-[72px] rounded-2xl border text-base sm:text-xl font-semibold inline-flex items-center justify-center gap-2.5 backdrop-blur-md transition cursor-pointer ${
                 isCurrentInQueue
-                  ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-300 cursor-default'
+                  ? 'bg-emerald-950/60 border-emerald-400/50 text-emerald-200 cursor-default'
                   : printQueue.length === 1
-                    ? 'bg-cyan-600/20 border-cyan-500/50 text-cyan-200 hover:bg-cyan-600/30'
-                    : 'bg-zinc-900 border-zinc-800 text-zinc-200 hover:bg-zinc-800/80 hover:text-white'
+                    ? 'bg-cyan-600/30 border-cyan-400/60 text-cyan-100 hover:bg-cyan-600/40'
+                    : 'bg-zinc-900/65 border-white/15 text-white hover:bg-zinc-800/80'
               }`}
             >
               {isCurrentInQueue ? (
                 <>
-                  <Check className="w-4 h-4" />
+                  <Check className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span>Queued (1/2)</span>
                 </>
               ) : printQueue.length === 1 ? (
                 <>
-                  <Printer className="w-4 h-4" />
+                  <Printer className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span>Print Pair (2/2)</span>
                 </>
               ) : (
                 <>
-                  <Printer className="w-4 h-4" />
+                  <Printer className="w-5 h-5 sm:w-6 sm:h-6" />
                   <span>Add to Print (1/2)</span>
                 </>
               )}
@@ -1061,58 +1065,60 @@ export default function App() {
               type="button"
               onClick={downloadImage}
               title="Download"
-              className="h-11 px-4 rounded-xl bg-zinc-100 text-zinc-950 text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-white transition cursor-pointer"
+              className="h-14 sm:h-[72px] px-5 sm:px-7 rounded-2xl bg-white text-zinc-950 text-base sm:text-xl font-semibold inline-flex items-center justify-center gap-2 hover:bg-zinc-100 shadow-lg transition cursor-pointer"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
         </div>
 
-        {/* Right: Standalone QR Code Card + 4x6 Print Queue Card */}
-        <aside className="w-full max-w-sm md:w-56 shrink-0 flex flex-col gap-3">
-          <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800/90 p-5 flex flex-col items-center justify-center gap-3 text-center">
-            <p className="text-xs font-medium tracking-wide uppercase text-zinc-300">
+        {/* Right/Bottom: Standalone QR Code Card + 4x6 Print Queue Card */}
+        <aside className="w-full max-w-[700px] xl:w-72 shrink-0 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 sm:gap-5">
+          <div className="rounded-3xl bg-zinc-900/60 backdrop-blur-md border border-white/15 p-5 sm:p-6 flex flex-col items-center justify-center gap-3.5 text-center shadow-xl">
+            <p className="text-sm sm:text-base font-semibold tracking-wide uppercase text-white">
               Scan to Download
             </p>
 
             {cloudinaryUrl ? (
-              <div className="p-3 rounded-xl bg-white shadow-sm">
-                <QRCodeSVG value={cloudinaryUrl} size={156} level="M" />
+              <div className="p-3.5 rounded-2xl bg-white shadow-md">
+                <QRCodeSVG value={cloudinaryUrl} size={184} level="M" />
               </div>
             ) : isUploadingCloud ? (
-              <div className="w-[180px] h-[180px] rounded-xl bg-zinc-950/60 border border-zinc-800/80 flex flex-col items-center justify-center gap-2.5 text-zinc-400">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-[11px]">Generating QR...</span>
+              <div className="w-[212px] h-[212px] rounded-2xl bg-zinc-950/50 border border-white/10 flex flex-col items-center justify-center gap-3 text-zinc-300">
+                <Loader2 className="w-7 h-7 animate-spin" />
+                <span className="text-sm">Generating QR...</span>
               </div>
             ) : (
-              <div className="w-[180px] min-h-[140px] rounded-xl bg-zinc-950/60 border border-zinc-800/80 px-3 py-4 flex items-center justify-center">
-                <p className="text-[11px] text-rose-300/90 leading-relaxed">
+              <div className="w-[212px] min-h-[168px] rounded-2xl bg-zinc-950/50 border border-white/10 px-4 py-5 flex items-center justify-center">
+                <p className="text-xs sm:text-sm text-rose-200/90 leading-relaxed">
                   {cloudError || 'QR code unavailable'}
                 </p>
               </div>
             )}
 
-            <p className="text-[11px] text-zinc-500 leading-snug">
+            <p className="text-xs sm:text-sm text-zinc-300 leading-snug">
               Point your phone camera at the QR code to save your photo
             </p>
           </div>
 
           {/* 4x6 Sheet Queue Status (2x3 + 2x3) */}
-          <div className="rounded-2xl bg-zinc-900/70 border border-zinc-800/90 p-3.5 flex flex-col gap-2.5">
+          <div className="rounded-3xl bg-zinc-900/60 backdrop-blur-md border border-white/15 p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-300">
+              <span className="text-sm sm:text-base font-semibold uppercase tracking-wide text-white">
                 4×6 Print Sheet
               </span>
-              <span className="text-[11px] text-zinc-500">{printQueue.length}/2</span>
+              <span className="text-sm sm:text-base text-zinc-300 font-medium">
+                {printQueue.length}/2
+              </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {[0, 1].map((slot) => {
                 const queuedItem = printQueue[slot]
                 return (
                   <div
                     key={slot}
-                    className="relative aspect-2/3 rounded-lg border border-dashed border-zinc-700/80 bg-zinc-950/60 overflow-hidden flex items-center justify-center"
+                    className="relative aspect-2/3 rounded-xl border border-dashed border-white/25 bg-zinc-950/45 overflow-hidden flex items-center justify-center"
                   >
                     {queuedItem ? (
                       <>
@@ -1125,13 +1131,13 @@ export default function App() {
                           type="button"
                           onClick={() => removeFromPrintQueue(queuedItem.id)}
                           title="Remove from print sheet"
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-zinc-950/80 text-zinc-200 flex items-center justify-center hover:bg-rose-600 transition cursor-pointer"
+                          className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-zinc-950/85 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-4 h-4" />
                         </button>
                       </>
                     ) : (
-                      <span className="text-[10px] text-zinc-600">2×3 #{slot + 1}</span>
+                      <span className="text-xs sm:text-sm text-zinc-400">2×3 #{slot + 1}</span>
                     )}
                   </div>
                 )
@@ -1142,7 +1148,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handlePrintSingleNow}
-                className="w-full py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-[11px] text-zinc-300 transition cursor-pointer"
+                className="w-full py-2.5 sm:py-3 rounded-xl bg-white/15 hover:bg-white/25 text-sm sm:text-base font-medium text-white transition cursor-pointer"
               >
                 Print 1 Half Now
               </button>
@@ -1150,7 +1156,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handlePrintSingleNow}
-                className="w-full py-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-800 text-[11px] text-zinc-300 transition cursor-pointer"
+                className="w-full py-2.5 sm:py-3 rounded-xl bg-white/15 hover:bg-white/25 text-sm sm:text-base font-medium text-white transition cursor-pointer"
               >
                 Print Single (Half 4×6)
               </button>
@@ -1162,19 +1168,25 @@ export default function App() {
   }
 
   return (
-    <div className="relative min-h-svh bg-zinc-950 text-zinc-100 overflow-x-hidden">
-      {/* Ambient Theme Gradient Background */}
+    <div
+      className="relative min-h-svh text-zinc-100 overflow-x-hidden transition-all duration-700"
+      style={{
+        backgroundColor: '#12131f',
+        backgroundImage: `radial-gradient(circle at 12% 14%, color-mix(in srgb, ${selectedTheme.primarySwatch} 62%, transparent) 0%, transparent 56%), radial-gradient(circle at 88% 84%, color-mix(in srgb, ${selectedTheme.secondarySwatch} 58%, transparent) 0%, transparent 58%), radial-gradient(circle at 82% 24%, color-mix(in srgb, ${selectedTheme.secondarySwatch} 32%, transparent) 0%, transparent 48%), radial-gradient(circle at 18% 78%, color-mix(in srgb, ${selectedTheme.primarySwatch} 34%, transparent) 0%, transparent 50%), linear-gradient(155deg, color-mix(in srgb, ${selectedTheme.primarySwatch} 26%, #141526) 0%, #151728 48%, color-mix(in srgb, ${selectedTheme.secondarySwatch} 26%, #141526) 100%)`,
+      }}
+    >
+      {/* Ambient Theme Glow Orbs */}
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden">
         <div
-          className="absolute -top-32 -left-32 w-[34rem] h-[34rem] rounded-full blur-[120px] opacity-25 transition-colors duration-700"
+          className="absolute -top-24 -left-24 w-[70vw] max-w-[48rem] h-[70vw] max-h-[48rem] rounded-full blur-[120px] opacity-45 transition-colors duration-700"
           style={{ backgroundColor: selectedTheme.primarySwatch }}
         />
         <div
-          className="absolute -bottom-36 -right-32 w-[36rem] h-[36rem] rounded-full blur-[130px] opacity-22 transition-colors duration-700"
+          className="absolute -bottom-28 -right-24 w-[72vw] max-w-[50rem] h-[72vw] max-h-[50rem] rounded-full blur-[130px] opacity-42 transition-colors duration-700"
           style={{ backgroundColor: selectedTheme.secondarySwatch }}
         />
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[42rem] h-[22rem] -rotate-12 rounded-full blur-[140px] opacity-12 transition-all duration-700"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85vw] max-w-[56rem] h-[36rem] -rotate-12 rounded-full blur-[140px] opacity-25 transition-all duration-700"
           style={{
             background: `linear-gradient(90deg, ${selectedTheme.primarySwatch}, ${selectedTheme.secondarySwatch})`,
           }}
@@ -1182,8 +1194,8 @@ export default function App() {
       </div>
 
       <div
-        className={`relative z-10 min-h-svh flex items-center justify-center px-4 ${
-          page === 'home' ? 'py-8' : 'py-6'
+        className={`relative z-10 min-h-svh flex items-center justify-center px-6 sm:px-10 ${
+          page === 'home' ? 'py-10 sm:py-14' : 'py-8 sm:py-10'
         }`}
       >
         {renderPage()}
