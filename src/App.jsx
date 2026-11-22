@@ -633,7 +633,7 @@ export default function App() {
         background: #ffffff;
       }
       .half img {
-        width: 2in;
+        width: 1.8in;
         height: 3in;
         object-fit: cover;
         display: block;
