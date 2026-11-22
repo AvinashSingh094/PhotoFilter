@@ -14,7 +14,6 @@ import {
   Home,
   Check,
   Printer,
-  X,
   Aperture,
   Focus,
   Zap,
@@ -308,10 +307,6 @@ export default function App() {
   const [isUploadingCloud, setIsUploadingCloud] = useState(false)
   const [cloudError, setCloudError] = useState('')
 
-  // 2-up 4x6 print queue (holds up to 2 portraits: left 2x3 + right 2x3 on a 4x6 sheet)
-  const [printQueue, setPrintQueue] = useState([])
-  const [currentResultId, setCurrentResultId] = useState('')
-
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
 
@@ -536,7 +531,6 @@ export default function App() {
       }
 
       setResultImageUrl(finalDataUrl)
-      setCurrentResultId(`${Date.now()}-${Math.random().toString(36).slice(2, 7)}`)
       setPage('result')
 
       // Automatically upload generated image to Cloudinary if configured
@@ -690,46 +684,9 @@ export default function App() {
     }, 60000)
   }
 
-  const isCurrentInQueue = Boolean(
-    currentResultId && printQueue.some((item) => item.id === currentResultId)
-  )
-
   const handlePrintAction = () => {
-    if (!resultImageUrl || !currentResultId) return
-
-    // If current photo is already queued as slot 1, print now if desired or wait
-    if (isCurrentInQueue) {
-      if (printQueue.length === 2) {
-        print4x6Sheet([printQueue[0].src, printQueue[1].src])
-        setPrintQueue([])
-      }
-      return
-    }
-
-    if (printQueue.length === 0) {
-      // Queue as Photo 1 of 2 and keep it ready for the next user
-      setPrintQueue([{ id: currentResultId, src: resultImageUrl }])
-    } else {
-      // Combine waiting Photo 1 + current Photo 2, print both on one 4x6 sheet, then reset queue
-      const pair = [printQueue[0].src, resultImageUrl]
-      print4x6Sheet(pair)
-      setPrintQueue([])
-    }
-  }
-
-  const handlePrintSingleNow = () => {
-    if (printQueue.length > 0) {
-      print4x6Sheet(printQueue.map((item) => item.src))
-      setPrintQueue([])
-      return
-    }
-    if (resultImageUrl) {
-      print4x6Sheet([resultImageUrl])
-    }
-  }
-
-  const removeFromPrintQueue = (id) => {
-    setPrintQueue((prev) => prev.filter((item) => item.id !== id))
+    if (!resultImageUrl) return
+    print4x6Sheet([resultImageUrl, resultImageUrl])
   }
 
   const renderPage = () => {
@@ -745,43 +702,6 @@ export default function App() {
               Select a neon lighting palette before capturing your portrait
             </p>
           </div>
-
-          {printQueue.length > 0 && (
-            <div className="rounded-2xl bg-zinc-900/65 backdrop-blur-md border border-white/15 px-5 py-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 min-w-0">
-                <img
-                  src={printQueue[0].src}
-                  alt="Queued print 1"
-                  className="w-11 h-16 rounded-lg object-cover border border-white/20 shrink-0"
-                />
-                <div className="min-w-0">
-                  <p className="text-base sm:text-lg font-medium text-white truncate">
-                    4×6 Print Queue ({printQueue.length}/2)
-                  </p>
-                  <p className="text-xs sm:text-sm text-zinc-300 truncate">
-                    Next photo will print together as 2×3 pair
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={handlePrintSingleNow}
-                  className="text-sm sm:text-base px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-medium transition cursor-pointer"
-                >
-                  Print Now
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeFromPrintQueue(printQueue[0].id)}
-                  title="Clear queue"
-                  className="p-2 text-zinc-300 hover:text-white transition cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-5 sm:gap-6">
             {FILTER_THEMES.map((theme) => {
@@ -1067,31 +987,10 @@ export default function App() {
             <button
               type="button"
               onClick={handlePrintAction}
-              disabled={isCurrentInQueue}
-              className={`flex-1 h-14 sm:h-[72px] rounded-2xl border text-base sm:text-xl font-semibold inline-flex items-center justify-center gap-2.5 backdrop-blur-md transition cursor-pointer ${
-                isCurrentInQueue
-                  ? 'bg-emerald-950/60 border-emerald-400/50 text-emerald-200 cursor-default'
-                  : printQueue.length === 1
-                    ? 'bg-cyan-600/30 border-cyan-400/60 text-cyan-100 hover:bg-cyan-600/40'
-                    : 'bg-zinc-900/65 border-white/15 text-white hover:bg-zinc-800/80'
-              }`}
+              className={`flex-1 h-14 sm:h-[72px] rounded-2xl bg-gradient-to-r ${selectedTheme.buttonGradient} text-white text-base sm:text-xl font-semibold inline-flex items-center justify-center gap-2.5 shadow-xl transition cursor-pointer`}
             >
-              {isCurrentInQueue ? (
-                <>
-                  <Check className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span>Queued (1/2)</span>
-                </>
-              ) : printQueue.length === 1 ? (
-                <>
-                  <Printer className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span>Print Pair (2/2)</span>
-                </>
-              ) : (
-                <>
-                  <Printer className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span>Add to Print (1/2)</span>
-                </>
-              )}
+              <Printer className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span>Print 2 Copies (4×6)</span>
             </button>
 
             <button
@@ -1134,66 +1033,42 @@ export default function App() {
             </p>
           </div>
 
-          {/* 4x6 Sheet Queue Status (2x3 + 2x3) */}
+          {/* 4x6 Sheet 2-Up Preview (2x3 + 2x3) */}
           <div className="rounded-3xl bg-zinc-900/60 backdrop-blur-md border border-white/15 p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-xl">
             <div className="flex items-center justify-between">
               <span className="text-sm sm:text-base font-semibold uppercase tracking-wide text-white">
                 4×6 Print Sheet
               </span>
-              <span className="text-sm sm:text-base text-zinc-300 font-medium">
-                {printQueue.length}/2
-              </span>
+              <span className="text-sm sm:text-base text-zinc-300 font-medium">2/2</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {[0, 1].map((slot) => {
-                const queuedItem = printQueue[slot]
-                return (
-                  <div
-                    key={slot}
-                    className="relative aspect-2/3 rounded-xl border border-dashed border-white/25 bg-zinc-950/45 overflow-hidden flex items-center justify-center"
-                  >
-                    {queuedItem ? (
-                      <>
-                        <img
-                          src={queuedItem.src}
-                          alt={`Print slot ${slot + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeFromPrintQueue(queuedItem.id)}
-                          title="Remove from print sheet"
-                          className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-zinc-950/85 text-white flex items-center justify-center hover:bg-rose-600 transition cursor-pointer"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <span className="text-xs sm:text-sm text-zinc-400">2×3 #{slot + 1}</span>
-                    )}
-                  </div>
-                )
-              })}
+              {[0, 1].map((slot) => (
+                <div
+                  key={slot}
+                  className="relative aspect-2/3 rounded-xl border border-white/20 bg-zinc-950/45 overflow-hidden flex items-center justify-center"
+                >
+                  {resultImageUrl ? (
+                    <img
+                      src={resultImageUrl}
+                      alt={`2×3 copy ${slot + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs sm:text-sm text-zinc-400">2×3 #{slot + 1}</span>
+                  )}
+                </div>
+              ))}
             </div>
 
-            {printQueue.length === 1 ? (
-              <button
-                type="button"
-                onClick={handlePrintSingleNow}
-                className="w-full py-2.5 sm:py-3 rounded-xl bg-white/15 hover:bg-white/25 text-sm sm:text-base font-medium text-white transition cursor-pointer"
-              >
-                Print 1 Half Now
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handlePrintSingleNow}
-                className="w-full py-2.5 sm:py-3 rounded-xl bg-white/15 hover:bg-white/25 text-sm sm:text-base font-medium text-white transition cursor-pointer"
-              >
-                Print Single (Half 4×6)
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handlePrintAction}
+              className="w-full py-2.5 sm:py-3 rounded-xl bg-white/15 hover:bg-white/25 text-sm sm:text-base font-medium text-white inline-flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Print 2 Copies (4×6)</span>
+            </button>
           </div>
         </aside>
       </main>
