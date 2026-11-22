@@ -715,10 +715,10 @@ export default function App() {
     setPrintQueue((prev) => prev.filter((item) => item.id !== id))
   }
 
-  // 1. HOME PAGE: Select Filter Color
-  if (page === 'home') {
-    return (
-      <div className="min-h-svh flex items-center justify-center px-4 py-8 bg-zinc-950 text-zinc-100">
+  const renderPage = () => {
+    // 1. HOME PAGE: Select Filter Color
+    if (page === 'home') {
+      return (
         <main className="w-full max-w-md flex flex-col gap-5">
           <div className="text-center space-y-1.5">
             <h1 className="text-xl font-medium tracking-tight text-zinc-100">
@@ -829,14 +829,12 @@ export default function App() {
             <ArrowRight className="w-4 h-4" />
           </button>
         </main>
-      </div>
-    )
-  }
+      )
+    }
 
-  // 2. CAPTURE PAGE
-  if (page === 'capture') {
-    return (
-      <div className="min-h-svh flex items-center justify-center px-4 py-6 bg-zinc-950 text-zinc-100">
+    // 2. CAPTURE PAGE
+    if (page === 'capture') {
+      return (
         <main className="w-full max-w-sm flex flex-col items-center gap-3.5">
           {/* Top Bar */}
           <div className="w-full flex items-center justify-between">
@@ -987,13 +985,11 @@ export default function App() {
             </div>
           )}
         </main>
-      </div>
-    )
-  }
+      )
+    }
 
-  // 3. RESULT PAGE
-  return (
-    <div className="min-h-svh flex items-center justify-center px-4 py-6 bg-zinc-950 text-zinc-100">
+    // 3. RESULT PAGE
+    return (
       <main className="w-full max-w-2xl flex flex-col md:flex-row items-center justify-center gap-6">
         {/* Left: Portrait + Action Buttons */}
         <div className="w-full max-w-sm flex flex-col items-center gap-3.5">
@@ -1162,6 +1158,36 @@ export default function App() {
           </div>
         </aside>
       </main>
+    )
+  }
+
+  return (
+    <div className="relative min-h-svh bg-zinc-950 text-zinc-100 overflow-x-hidden">
+      {/* Ambient Theme Gradient Background */}
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div
+          className="absolute -top-32 -left-32 w-[34rem] h-[34rem] rounded-full blur-[120px] opacity-25 transition-colors duration-700"
+          style={{ backgroundColor: selectedTheme.primarySwatch }}
+        />
+        <div
+          className="absolute -bottom-36 -right-32 w-[36rem] h-[36rem] rounded-full blur-[130px] opacity-22 transition-colors duration-700"
+          style={{ backgroundColor: selectedTheme.secondarySwatch }}
+        />
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[42rem] h-[22rem] -rotate-12 rounded-full blur-[140px] opacity-12 transition-all duration-700"
+          style={{
+            background: `linear-gradient(90deg, ${selectedTheme.primarySwatch}, ${selectedTheme.secondarySwatch})`,
+          }}
+        />
+      </div>
+
+      <div
+        className={`relative z-10 min-h-svh flex items-center justify-center px-4 ${
+          page === 'home' ? 'py-8' : 'py-6'
+        }`}
+      >
+        {renderPage()}
+      </div>
     </div>
   )
 }
