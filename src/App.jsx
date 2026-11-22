@@ -15,7 +15,24 @@ import {
   Check,
   Printer,
   X,
+  Aperture,
+  Focus,
+  Zap,
+  Film,
+  Image as ImageIcon,
+  Sparkles,
 } from 'lucide-react'
+
+const CARD_DOODLE_ICONS = [
+  { Icon: Camera, className: 'top-[16%] left-[44%] w-8 h-8 sm:w-11 sm:h-11 -rotate-12' },
+  { Icon: Sparkles, className: 'top-[12%] right-[24%] w-6 h-6 sm:w-8 sm:h-8 rotate-12' },
+  { Icon: Aperture, className: 'top-[38%] left-[10%] w-8 h-8 sm:w-10 sm:h-10 rotate-18' },
+  { Icon: Zap, className: 'top-[34%] right-[10%] w-7 h-7 sm:w-9 sm:h-9 -rotate-15' },
+  { Icon: Focus, className: 'top-[48%] left-[46%] w-8 h-8 sm:w-10 sm:h-10 rotate-6' },
+  { Icon: Film, className: 'bottom-[26%] right-[12%] w-8 h-8 sm:w-10 sm:h-10 rotate-15' },
+  { Icon: ImageIcon, className: 'bottom-[34%] left-[20%] w-7 h-7 sm:w-9 sm:h-9 -rotate-12' },
+  { Icon: Camera, className: 'bottom-[12%] right-[28%] w-6 h-6 sm:w-8 sm:h-8 rotate-12' },
+]
 
 const MODEL_NAME = 'gpt-image-2.6-flare'
 const TARGET_WIDTH = 1024
@@ -787,6 +804,22 @@ export default function App() {
                       background: `linear-gradient(90deg, transparent, ${theme.primarySwatch}, transparent)`,
                     }}
                   />
+
+                  {/* Scattered white photo/camera doodle pattern */}
+                  <div
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute inset-0 text-white transition-opacity duration-300 ${
+                      isSelected ? 'opacity-25' : 'opacity-15 group-hover:opacity-20'
+                    }`}
+                  >
+                    {CARD_DOODLE_ICONS.map(({ Icon, className }, idx) => (
+                      <Icon
+                        key={idx}
+                        strokeWidth={1.6}
+                        className={`absolute ${className}`}
+                      />
+                    ))}
+                  </div>
 
                   <div className="relative flex items-center justify-between">
                     <div className="flex items-center -space-x-2">
