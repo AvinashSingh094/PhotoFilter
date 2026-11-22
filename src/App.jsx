@@ -684,9 +684,14 @@ export default function App() {
     }, 60000)
   }
 
-  const handlePrintAction = () => {
+  const handlePrintDouble = () => {
     if (!resultImageUrl) return
     print4x6Sheet([resultImageUrl, resultImageUrl])
+  }
+
+  const handlePrintSingle = () => {
+    if (!resultImageUrl) return
+    print4x6Sheet([resultImageUrl])
   }
 
   const renderPage = () => {
@@ -986,7 +991,7 @@ export default function App() {
 
             <button
               type="button"
-              onClick={handlePrintAction}
+              onClick={handlePrintDouble}
               className={`flex-1 h-14 sm:h-[72px] rounded-2xl bg-gradient-to-r ${selectedTheme.buttonGradient} text-white text-base sm:text-xl font-semibold inline-flex items-center justify-center gap-2.5 shadow-xl transition cursor-pointer`}
             >
               <Printer className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -1061,14 +1066,25 @@ export default function App() {
               ))}
             </div>
 
-            <button
-              type="button"
-              onClick={handlePrintAction}
-              className="w-full py-2.5 sm:py-3 rounded-xl bg-white/15 hover:bg-white/25 text-sm sm:text-base font-medium text-white inline-flex items-center justify-center gap-2 transition cursor-pointer"
-            >
-              <Printer className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Print 2 Copies (4×6)</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={handlePrintDouble}
+                className="w-full py-2.5 sm:py-3 rounded-xl bg-white/20 hover:bg-white/30 text-xs sm:text-sm font-semibold text-white inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <Printer className="w-4 h-4 shrink-0" />
+                <span>Print Double</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintSingle}
+                className="w-full py-2.5 sm:py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs sm:text-sm font-medium text-zinc-100 inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <Printer className="w-4 h-4 shrink-0" />
+                <span>Print Single</span>
+              </button>
+            </div>
           </div>
         </aside>
       </main>
